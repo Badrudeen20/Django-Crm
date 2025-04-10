@@ -1,0 +1,16 @@
+
+{% extends "movieplanet/layout/admin.html" %}
+
+
+{% block content %}
+<div class="container d-flex justify-content-center">
+    {% with request.session.customer as customer %}
+        {% if customer %}
+            <h2>Welcome, {{ customer.name }}</h2>
+        {% else %}
+            <h2>Welcome, Guest!</h2>
+        {% endif %}
+    {% endwith %}
+</div>
+
+{% endblock %}

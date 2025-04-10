@@ -1,0 +1,30 @@
+{% extends "backend/layout/auth.html" %}
+
+
+{% block start %}
+
+ <div class="container d-flex justify-content-center">
+  <h3>Sign Up</h3>
+ </div>
+<div class="container d-flex justify-content-center">
+   
+    <form class="container" action="" method="POST"  style="max-width: 700px;">
+        {% csrf_token %}
+
+        <div class="form-group">
+          <label for="name">Username</label>
+          <input type="text" name="name" class="form-control" id="name" aria-describedby="name" placeholder="Enter name">
+        </div>
+        <div class="form-group">
+          <label for="email">Email address</label>
+          <input type="email" name="email" class="form-control" id="email" aria-describedby="emailHelp" placeholder="Enter email">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" name="password" class="form-control" id="password" placeholder="Password">
+        </div>
+     
+        <button type="submit" class="btn btn-primary mt-2">Submit</button>
+    </form>
+</div>
+{% endblock %}

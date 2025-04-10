@@ -1,0 +1,80 @@
+[ 
+      {
+            "id":1,
+            "name":"Home",
+            "type":"file",
+            "link":"",
+            "icon":""
+      },
+      {
+            "id":2,
+            "name":"Bollywood",
+            "type":"folder",
+            "icon":""    
+      },
+      {
+            "id":3,
+            "parentId":2,
+            "name":"480P Movice",
+            "type":"file",
+            "link":"",
+            "icon":""
+            
+      },
+      {
+            "id":4,
+            "name":"Animation",
+            "type":"folder",
+            "icon":""
+      },
+      {
+            "id":5,
+            "parentId":4,
+            "name":"Hindi Movie",
+            "type":"file",
+            "link":"",
+            "icon":""
+            
+      },
+      {
+            "id":6,
+            "parentId":4,
+            "name":"480 Movie",
+            "type":"file",
+            "link":"",
+            "icon":""
+            
+      },
+      {
+            "id":7,
+            "name":"Webseries",
+            "type":"folder",
+            "icon":""
+      },
+      {
+            "id":8,
+            "parentId":7,
+            "name":"Netflix",
+            "type":"folder",
+            "link":"",
+            "icon":""
+            
+      },
+      {
+            "id":9,
+            "parentId":8,
+            "name":"Popcon",
+            "type":"file",
+            "link":"",
+            "icon":""
+      },
+      {
+            "id":10,
+            "parentId":8,
+            "name":"HBO",
+            "type":"file",
+            "link":"",
+            "icon":""
+      }
+
+]

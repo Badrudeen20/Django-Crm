@@ -1,0 +1,16 @@
+
+{% extends "backend/layout/base.html" %}
+
+
+{% block content %}
+<div class="container d-flex justify-content-center">
+    {% with request.session.user as user %}
+        {% if user %}
+            <h2>Welcome, {{ user.name }}</h2>
+        {% else %}
+            <h2>Welcome, Guest!</h2>
+        {% endif %}
+    {% endwith %}
+</div>
+
+{% endblock %}

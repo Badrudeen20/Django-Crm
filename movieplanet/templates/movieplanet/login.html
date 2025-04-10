@@ -1,0 +1,23 @@
+{% extends "movieplanet/layout/auth.html" %}
+
+
+{% block start %}
+<div class="container d-flex justify-content-center">
+   
+    <form action="" method="post" class="container" style="max-width: 700px;">
+        {% csrf_token %}
+        <h4>Login Form</h4>   
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" name="email" class="form-control" id="email" aria-describedby="emailHelp" placeholder="Enter email">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" name="password" class="form-control" id="password" placeholder="Password">
+        </div>
+          
+        <button type="submit" class="btn btn-primary mt-2">Submit</button>
+    </form>
+</div>
+
+{% endblock %}

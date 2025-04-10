@@ -1,0 +1,152 @@
+{% extends "movieplanet/layout/movie.html" %}
+
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.css" />
+   <style>
+    .card-block {
+    font-size: 1em;
+    position: relative;
+    margin: 0;
+    padding: 1em;
+    border: none;
+    border-top: 1px solid rgba(34, 36, 38, .1);
+    box-shadow: none;
+     
+}
+   </style>
+    <div class="container-fluid">
+       <div class="row">
+          <div class="col-md-12 col-sm-12 col-lg-8 ">
+            <table id="customer_table"   class="display" style="width:100%">
+              <tbody class="row">
+    
+              </tbody>
+            </table>
+          </div>
+      
+
+          <div class="col-md-12 col-sm-12 col-lg-4">
+              <div class="container">
+                <div class="row">
+                  
+                  {% for t in Trands %}
+                    <div class="col-md-6 col-sm-12 col-lg-12">
+                      <div class="card float-left my-2">
+                        <div class="row ">
+
+                          {% if forloop.counter|divisibleby:2 %}
+                              <div class="col-7 ">
+                                <div class="card-block">                          
+                                  <a class="card-text" href="#">{{t.post.name}}</a>
+                                </div>
+                              </div>
+                              <div class="col-5">
+                                <img class="d-block w-100" src="{{t.post.image}}" alt="">
+                              </div>
+                          {% else %}
+                              <div class="col-5">
+                                <img class="d-block w-100" src="{{t.post.image}}" alt="">
+                              </div>
+                              <div class="col-7">
+                                <div class="card-block">
+                                  <a class="card-text" href="#">{{t.post.name}}</a>
+                                </div>
+                              </div> 
+                          {% endif %}     
+                        </div>
+                      </div>
+                    </div>
+                  {% endfor %}
+                 
+
+             
+                </div>
+                 
+                
+                  
+                  
+              </div>
+                  
+          </div>
+       </div>
+        
+ 
+    </div>
+   
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script> -->
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script> -->
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.js"></script>
+<script>
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+   
+    $(document).ready( function () {
+      loadData()
+    })
+    function loadData(){
+      var pgno = 0;
+      $('table.display').DataTable({
+            "processing" : true,
+		    "serverSide" : true,
+            "lengthChange": false,
+            "pageLength" : 4,
+            "oSearch": {"sSearch": "{{request.GET.search}}" },
+            "displayStart":("{{request.GET.page}}") ?(4*"{{request.GET.page}}")-4 : 0,
+            "ordering": false,
+            createdRow:function(row, data, dataIndex){
+              let url = "{{ settings.BASE_URL }}/detail/"+data.name.split(' ').join('+')
+             
+              let card  = `<article class="card animated fadeInLeft">
+                            <img class="card-img-top img-responsive" src="${data.image}" alt="Deer in nature" />
+                            <div class="card-body">
+                            
+                            <a class="card-text" href="${url}">${data.name}</a>
+                            
+                            </div>
+                          </article>`
+              $(row).addClass('col-xl-4 col-sm-6 col-xs-6 col-md-6 col-6  my-2 border-0');
+              $(row).html(card);
+            },
+            ajax: function (data, callback, settings) {
+                var api = this.api();
+                var search =  api.search() 
+                // if("{{request.GET.search}}"){
+                //   var search =  "{{request.GET.search}}"
+                // }else{
+                //   var search =  api.search() 
+                // }
+                
+                var pageInfo = api.page.info();
+                pgno =  pageInfo.page+1;
+                let param = '?page='+pgno
+                
+                if(search){
+                  param +='&search='+search
+                }
+                window.history.replaceState(null, null, param);
+                
+                $.ajax({
+                    url: "{{ settings.BASE_URL }}",
+                    method:"POST",
+                    headers: {'X-CSRFToken': csrftoken},
+                    data:{start:pgno, length:4,search:search,type:'View'}
+                }).then ( function( json, textStatus, jqXHR ) {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    callback(json);
+                });
+            },
+            // pageLength: 10,
+            columns: [
+                { data: "image" },
+                { data: "name" },
+                { data: "rate" },  
+            ],
+            
+        });
+        
+    }
+
+
+</script>
+
+{% endblock %}

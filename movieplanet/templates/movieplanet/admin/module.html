@@ -1,0 +1,178 @@
+
+{% extends "movieplanet/layout/admin.html" %}
+
+
+{% block content %}
+<div class="container d-flex justify-content-center">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.css" />
+
+<div class="container mt-2">
+    {% if parentId %}
+        <!-- <a class="btn btn-sm btn-primary" href="{{ settings.BASE_URL }}/dashboard/administration/module/add/{{parentId}}" style="margin-block: 20px;">Add Module</a> -->
+        <button class="btn btn-sm btn-primary my-2" id="add-module">Add module</button>
+    {% else %}
+        <button class="btn btn-sm btn-primary my-2" id="add-module">Add module</button>
+        <!-- <a class="btn btn-sm btn-primary" href="{{ settings.BASE_URL }}/dashboard/administration/module/add" style="margin-block: 20px;">Add Module</a> -->
+    {% endif %}
+    <div class="row">
+        <div class="col-12">
+            <table id="customer_table"  class="display" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Module</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+            </table>
+        </div>
+
+      </div>
+  
+</div>
+
+<!-- Add-Edit -->
+<div class="modal fade" id="AddEditModel" tabindex="-1" role="dialog" aria-labelledby="AddEditModel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <form class="modal-content" method="post" action="{{ settings.BASE_URL }}add/{{parentId}}" id="AddEditForm">
+        {% csrf_token %}
+            <div class="modal-header">
+                <h5 class="modal-title" id="AddEditTitle">Modal</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+               <div class="msg"></div>
+                <input type="hidden" name="parent_id" id="parent_id" value="{{parentId}}" />             
+                <input type="hidden" name="module_id" id="module_id" value="" />             
+                <div class="form-group">
+                    <label for="module">Module</label>
+                    <input type="text" class="form-control" required name="module" id="module"  placeholder="Enter label">
+                </div>
+                <div class="form-group">
+                    <label for="moduleType">Select Module Type</label>
+                    <select class="form-select" name="moduleType" id="moduleType" required>
+                        <option value="1" selected>File</option>
+                        <option value="2">Folder</option>
+                    </select>
+                </div>
+                <div class="form-group" id="url-container">
+                    <label for="url">Enter url</label>
+                    <input type="text" class="form-control" name="url" required placeholder="Enter url" />
+                </div>
+               
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Save </button>
+            </div>
+      </form>
+    </div>
+</div>
+
+
+<!-- Delete -->
+<div class="modal fade" id="DelModel" tabindex="-1" role="dialog" aria-labelledby="DelModel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <form class="modal-content" method="post">
+        {% csrf_token %}
+            <div class="modal-header">
+            <h5 class="modal-title" id="DelModelTitle">Modal Delete</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                        <div class="form-group">
+                            <label for="content">Are you sure</label>
+                            <input type="hidden" name="type" value="DELETE">
+                            <input type="hidden" name="delid"  >
+                        </div> 
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Delete</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.js"></script>
+<script>
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    $(document).ready( function () {
+        loadData()
+    })
+
+    $('#AddEditForm').submit(function(e){
+        e.preventDefault()
+        // console.log($(this).serializeArray())
+        addEditModel('POST',$(this).serialize())
+    })
+  
+    
+    function loadData(){
+        let table = $('table.display')
+        if($.fn.dataTable.isDataTable(table)) {
+            table.DataTable().destroy();
+        }
+        var pgno = 0;
+        $('table.display').DataTable({
+            "processing" : true,
+			"serverSide" : true,
+            pageLength : 4,
+            ajax: function (data, callback, settings) {
+                var api = this.api();
+                var search = api.search() 
+                var pageInfo = api.page.info();
+                pgno = pageInfo.page+1;
+                
+                $.ajax({
+                    url: "{{ settings.BASE_URL }}{{parentId}}",
+                    method:"POST",
+                    headers: {'X-CSRFToken': csrftoken},
+                    data:{start:pgno, length:4,search:search}
+                }).then ( function( json, textStatus, jqXHR ) {
+                    console.log(json)
+                     callback(json);
+                });
+            },
+            // pageLength: 10,
+            columns: [
+                { data: "id" },
+                { data: "module" },
+                { data: "action" },
+                
+            ],
+         
+        });
+    }
+
+    $('#moduleType').on('change',function(){
+        if($(this).val()==1){
+         $('#url-container').html(`
+            <label for="url">Enter url</label>
+            <input type="text" class="form-control" name="url" placeholder="Enter url">
+         `)
+        }else{
+            $('#url-container').html('')
+        }
+    })
+    $('#add-module').click(function(){
+        addEditModel('GET',{})
+    })
+    
+   
+
+    function delModel(id){
+        $('#DelModel').modal('show');
+        $('[name="delid"]').val(id);
+    }
+
+    
+</script>
+
+{% endblock %}

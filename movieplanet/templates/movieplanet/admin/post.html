@@ -1,0 +1,282 @@
+
+{% extends "movieplanet/layout/admin.html" %}
+
+
+{% block content %}
+<div class="container d-flex justify-content-center">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.css" />
+<style>
+    @media (min-width: 576px) {
+    .modal-dialog {
+        max-width: 700px; /* Change width as needed */
+    }
+}
+
+@media (min-width: 768px) {
+    .modal-dialog {
+        max-width: 800px;
+    }
+}
+
+@media (min-width: 992px) {
+    .modal-dialog {
+        max-width: 900px;
+    }
+}
+</style>
+
+
+<div class="container mt-2">
+    <button type="button"  data-bs-toggle="modal" data-bs-target="#AddEditModel" class="btn btn-primary my-2">Add Post</button>
+    <button type="button"  data-bs-toggle="modal" data-bs-target="#ExcelPostModel" class="btn btn-primary my-2">Uplaod Post</button>
+    <div class="row">
+        <div class="col-12">
+            <table id="customer_table"  class="display " style="width:100%;">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Name</th>
+                        <th>Image</th>
+                        <th>Rate</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+            </table>
+        </div>
+
+      </div>
+  
+</div>
+
+
+<div class="modal fade" id="AddEditModel" tabindex="-1" role="dialog" aria-labelledby="AddEditModel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <form class="modal-content" method="post" id="post-form">
+        {% csrf_token %}
+            <div class="modal-header">
+            <h5 class="modal-title" id="DelModelTitle">Modal Add</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body row">
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input type="text" class="form-control" name="name" id="name" value="{{post.name}}"  placeholder="Enter post">
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label for="rate">Rate</label>
+                        <input type="text" name="rate" class="form-control" id="rate" value="{{post.rate}}"  placeholder="Enter rate">
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label for="size">Size</label>
+                        <input type="text" class="form-control" id="size" name="size"  value="{{post.size}}" placeholder="Enter size">
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label for="lang">Language</label>
+                        <input type="text" class="form-control" name="lang" id="lang"  value="{{post.lang}}" placeholder="Enter language">
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label for="image">Image</label>
+                        <input type="text" class="form-control" name="image" id="image" value="{{post.image}}"  placeholder="Enter image">
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label for="genre">Genre</label>
+                        <input type="text" class="form-control" name="genre" id="genre" value="{{post.genre}}"  placeholder="Enter genre">
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label for="link">Link</label>
+                        <input type="text" class="form-control" name="link" id="link" value="{{post.link}}"  placeholder="Enter link">
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label for="starcast">Star Cast</label>
+                        <input type="text" class="form-control" name="starcast" id="starcast" value="{{post.starcast}}"  placeholder="Enter star cast">
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label for="genre">Type</label>
+                        <select class="form-control" name="type">
+                            <option value="1">File</option>
+                            <option value="2">Folder</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group d-flex mt-4">
+                        <input  class="form-check" type="checkbox" name="status" checked value="1" />
+                        <label for="genre">Active</label>
+                        
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label for="release_date">Release Date</label>
+                        <input  class="form-control" type="date" name="release_date" />   
+                    </div>
+                </div> 
+                <div class="col-sm-6">
+                    <div class="form-group">
+                       <label for="story">Story</label>
+                       <textarea class="form-control" name="story" id="story">{{post.story}}</textarea>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="form-group my-2">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+      </form>
+    </div>
+</div>
+
+<div class="modal fade" id="ExcelPostModel" tabindex="-1" role="dialog" aria-labelledby="ExcelPostModel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <form class="modal-content" method="post" id="excel-post-form">
+        {% csrf_token %}
+            <div class="modal-header">
+            <h5 class="modal-title" id="DelModelTitle">Modal Upload</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body row">
+               
+                <div class="col-sm-6">
+                    <div class="form-group4">
+                        <label for="excel_file">Upload</label>
+                        <input  class="form-control" type="file" name="excel_file" />   
+                    </div>
+                </div>
+                <div class="col-sm-4 mt-3">
+                    <div class="form-group my-2">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+      </form>
+    </div>
+</div>
+
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.js"></script>
+<script>
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    $(document).ready( function () {
+        loadData()
+    })
+    function loadData(){
+        var pgno = 0;
+        $('table.display').DataTable({
+            "processing" : true,
+			"serverSide" : true,
+            pageLength : 4,
+            // scrollX: true,
+            // scrollCollapse: true,
+            // autoWidth: false,
+            ajax: function (data, callback, settings) {
+                var api = this.api();
+                var search = api.search() 
+                var pageInfo = api.page.info();
+                pgno = pageInfo.page+1;
+                
+                $.ajax({
+                    url: "{{ settings.BASE_URL }}",
+                    method:"POST",
+                    headers: {'X-CSRFToken': csrftoken},
+                    data:{start:pgno, length:4,search:search,type:'View'}
+                }).then ( function( json, textStatus, jqXHR ) {
+                    console.log(json)
+                    callback(json);
+                });
+            },
+            // pageLength: 10,
+            columns: [
+                { data: "id" },
+                { data: "name" },
+                { data: "image" },
+                { data: "rate" },
+                { data: "action" },
+                
+            ],
+         
+        });
+    }
+   
+    $('#post-form').submit(function(e){
+        e.preventDefault();
+        // let formData = $(this).serialize()
+        const formData = Object.fromEntries($(this).serializeArray().map(x => [x.name, x.value]));
+        $.ajax({
+            url: '{{ settings.BASE_URL }}', // Replace with your server endpoint
+            method: 'PUT',
+            data: JSON.stringify(formData),
+            headers: {'X-CSRFToken': csrftoken},
+            contentType: 'application/json',
+            success: function(response) {
+                if(response.status){
+                    $('#AddEditModel').modal('hide');
+                    $('table.display').DataTable().clear().destroy();
+                    loadData()
+                }
+               
+            },
+            error: function(xhr) {
+                console.error('Error submitting form:', xhr.responseText);
+            }
+        });
+    })
+    $('#excel-post-form').submit(function(e){
+        e.preventDefault();
+        const formData = new FormData(this);
+
+        $.ajax({
+            url: "{% url 'movieplanet:excelPost' %}",  // 👈 update this with your Django URL
+            type: 'POST',
+            headers: {'X-CSRFToken': csrftoken},
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if(response.status){
+                    $('#ExcelPostModel').modal('hide');
+                    $('table.display').DataTable().clear().destroy();
+                    loadData()
+                }
+            },
+            error: function(xhr) {
+                console.log('Upload Failed:', xhr.responseText);
+                alert('Upload failed.');
+            }
+        });
+    })
+
+</script>
+
+{% endblock %}
