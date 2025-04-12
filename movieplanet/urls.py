@@ -21,9 +21,8 @@ urlpatterns=[
   path('admin/website/posts',views.posts,name="posts"),
   path('admin/website/excelPost',views.excelPost,name="excelPost"),
   path('admin/sidebar',views.sidebarList,name="sidebar"),
-  path('admin/administration/permission/',views.permission),
-  path('admin/administration/module/',views.module),
-  path('admin/administration/module/<int:parentId>',views.module),
+  path('admin/administration/permission/',views.permission,name="movieplanet-permission"),
+  path('admin/administration/permission/<int:role>',views.permission),
   path('admin/administration/users',views.customers),
  
 ]

@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.css" />
 
 <div class="container mt-2">
-    <button  class="btn btn-primary my-2">Add Menu</button>
+    <div class="action"></div>
     <div class="row">
         <div class="col-12">
             <table id="customer_table"  class="display table" style="width:100%">
@@ -26,6 +26,77 @@
 
       </div>
   
+</div>
+
+<div class="modal fade" id="AddModel" tabindex="-1" role="dialog" aria-labelledby="AddModel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <form class="modal-content" method="post">
+        {% csrf_token %}
+            <div class="modal-header">
+            <h5 class="modal-title" id="AddModelTitle">Modal Add</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Name</label>
+                    <input class="form-control" name="menu" placeholder="Menu name" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Type</label>
+                    <select class="form-select" name="type">
+                        <option selected value="file">file</option>
+                        <option value="folder">folder</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Link</label>
+                    <input class="form-control" name="link" placeholder="link" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Icon</label>
+                    <input class="form-control" name="icon" placeholder="icon" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="modal fade" id="EditModel" tabindex="-1" role="dialog" aria-labelledby="EditModel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <form class="modal-content" method="post">
+        {% csrf_token %}
+            <div class="modal-header">
+            <h5 class="modal-title" id="EditModelTitle">Modal Edit</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Name</label>
+                    <input class="form-control" name="menu" placeholder="Menu name" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Link</label>
+                    <input class="form-control" name="link" placeholder="link" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Icon</label>
+                    <input class="form-control" name="icon" placeholder="icon" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script> -->
@@ -57,6 +128,9 @@ function loadData(){
                 data:{start:pgno, length:4,search:search,type:'View'}
             }).then ( function( json, textStatus, jqXHR ) {
                 console.log(json)
+                if(json.success){
+                    $('.action').html(json.action.add)
+                }
                 callback(json);
             });
         },
@@ -65,7 +139,6 @@ function loadData(){
             { data: "id" },
             { data: "name" },
             { data: "action" },
-            
         ],
         
     });

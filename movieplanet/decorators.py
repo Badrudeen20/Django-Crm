@@ -43,9 +43,9 @@ def xhr_request_only():
                     
                 else:
                     kwargs['roleIds'] = list(Roles.objects.using('movieplanet').filter(user_id=auth['id']).values_list('role_id', flat=True))
-                    permissions = Permission.objects.using('movieplanet').filter(role_id__in=kwargs['roleIds']).select_related('modules')
+                    permissions = Permission.objects.using('movieplanet').filter(role_id__in=kwargs['roleIds'],permission__contains='View').select_related('modules')
                     kwargs['module'] = [permission.modules.module for permission in permissions]
-                print(kwargs)
+                
                 return view(request, *args, **kwargs)  
             else:
                 return JsonResponse({

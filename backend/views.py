@@ -54,7 +54,8 @@ def register(request):
 
 def logout(request):
     request.session.flush()
-    return HttpResponse("Logged out successfully!")
+    return HttpResponseRedirect(reverse('backend:backend-login'))
+    # return HttpResponse("Logged out successfully!")
 
 
 

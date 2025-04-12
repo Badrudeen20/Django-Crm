@@ -27,8 +27,9 @@
 
 
 <div class="container mt-2">
-    <button type="button"  data-bs-toggle="modal" data-bs-target="#AddEditModel" class="btn btn-primary my-2">Add Post</button>
-    <button type="button"  data-bs-toggle="modal" data-bs-target="#ExcelPostModel" class="btn btn-primary my-2">Uplaod Post</button>
+    <!-- <button type="button"  data-bs-toggle="modal" data-bs-target="#AddEditModel" class="btn btn-primary my-2">Add Post</button>
+    <button type="button"  data-bs-toggle="modal" data-bs-target="#ExcelPostModel" class="btn btn-primary my-2">Uplaod Post</button> -->
+    <div class="action"></div>
     <div class="row">
         <div class="col-12">
             <table id="customer_table"  class="display " style="width:100%;">
@@ -60,90 +61,12 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body row">
-                <div class="col-sm-6">
-                    <div class="form-group">
-                        <label for="name">Name</label>
-                        <input type="text" class="form-control" name="name" id="name" value="{{post.name}}"  placeholder="Enter post">
-                    </div>
-                </div>
-                <div class="col-sm-6">
-                    <div class="form-group">
-                        <label for="rate">Rate</label>
-                        <input type="text" name="rate" class="form-control" id="rate" value="{{post.rate}}"  placeholder="Enter rate">
-                    </div>
-                </div>
-                <div class="col-sm-6">
-                    <div class="form-group">
-                        <label for="size">Size</label>
-                        <input type="text" class="form-control" id="size" name="size"  value="{{post.size}}" placeholder="Enter size">
-                    </div>
-                </div>
-                <div class="col-sm-6">
-                    <div class="form-group">
-                        <label for="lang">Language</label>
-                        <input type="text" class="form-control" name="lang" id="lang"  value="{{post.lang}}" placeholder="Enter language">
-                    </div>
-                </div>
-                <div class="col-sm-6">
-                    <div class="form-group">
-                        <label for="image">Image</label>
-                        <input type="text" class="form-control" name="image" id="image" value="{{post.image}}"  placeholder="Enter image">
-                    </div>
-                </div>
-                <div class="col-sm-6">
-                    <div class="form-group">
-                        <label for="genre">Genre</label>
-                        <input type="text" class="form-control" name="genre" id="genre" value="{{post.genre}}"  placeholder="Enter genre">
-                    </div>
-                </div>
-                <div class="col-sm-6">
-                    <div class="form-group">
-                        <label for="link">Link</label>
-                        <input type="text" class="form-control" name="link" id="link" value="{{post.link}}"  placeholder="Enter link">
-                    </div>
-                </div>
-                <div class="col-sm-6">
-                    <div class="form-group">
-                        <label for="starcast">Star Cast</label>
-                        <input type="text" class="form-control" name="starcast" id="starcast" value="{{post.starcast}}"  placeholder="Enter star cast">
-                    </div>
-                </div>
-                <div class="col-sm-6">
-                    <div class="form-group">
-                        <label for="genre">Type</label>
-                        <select class="form-control" name="type">
-                            <option value="1">File</option>
-                            <option value="2">Folder</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-sm-6">
-                    <div class="form-group d-flex mt-4">
-                        <input  class="form-check" type="checkbox" name="status" checked value="1" />
-                        <label for="genre">Active</label>
-                        
-                    </div>
-                </div>
-                <div class="col-sm-6">
-                    <div class="form-group">
-                        <label for="release_date">Release Date</label>
-                        <input  class="form-control" type="date" name="release_date" />   
-                    </div>
-                </div> 
-                <div class="col-sm-6">
-                    <div class="form-group">
-                       <label for="story">Story</label>
-                       <textarea class="form-control" name="story" id="story">{{post.story}}</textarea>
-                    </div>
-                </div>
-                <div class="col-sm-4">
-                    <div class="form-group my-2">
-                        <button type="submit" class="btn btn-primary">Submit</button>
-                    </div>
-                </div>
+            <div class="modal-body row" id="modal-fields">
+
             </div>
             <div class="modal-footer">
+
+                <button type="submit" class="btn btn-primary">Submit</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
       </form>
@@ -213,6 +136,9 @@
                     data:{start:pgno, length:4,search:search,type:'View'}
                 }).then ( function( json, textStatus, jqXHR ) {
                     console.log(json)
+                    if(json.success){
+                        $('.action').html(json.action.add)
+                    }
                     callback(json);
                 });
             },
@@ -276,7 +202,94 @@
             }
         });
     })
+    
+    function openModal(data={}){
+        $('#modal-fields').html(`<div class="col-sm-6">
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input type="text" class="form-control" name="name" id="name" value="${data.name ?? ''}"  placeholder="Enter post">
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label for="rate">Rate</label>
+                        <input type="text" name="rate" class="form-control" id="rate" value="${data.rate ?? ''}"  placeholder="Enter rate">
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label for="size">Size</label>
+                        <input type="text" class="form-control" id="size" name="size"  value="${data.size ?? ''}" placeholder="Enter size">
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label for="lang">Language</label>
+                        <input type="text" class="form-control" name="lang" id="lang"  value="${data.lang ?? ''}" placeholder="Enter language">
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label for="image">Image</label>
+                        <input type="text" class="form-control" name="image" id="image" value="${data.image ?? ''}"  placeholder="Enter image">
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label for="genre">Genre</label>
+                        <input type="text" class="form-control" name="genre" id="genre" value="${data.genre ?? ''}"  placeholder="Enter genre">
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label for="link">Link</label>
+                        <input type="text" class="form-control" name="link" id="link" value="${data.link ?? ''}"  placeholder="Enter link">
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label for="starcast">Star Cast</label>
+                        <input type="text" class="form-control" name="starcast" id="starcast" value="${data.starcast ?? ''}"  placeholder="Enter star cast">
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label for="genre">Type</label>
+                        <select class="form-control" name="type">
+                            <option value="1" ${data.type=='1' ? 'selected' : ''} >File</option>
+                            <option value="2" ${data.type=='2' ? 'selected' : ''}>Folder</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group d-flex mt-4">
+                        <input  class="form-check" type="checkbox" name="status" ${data.status ?'checked' :''}  value="1" />
+                        <label for="genre">Active</label>
+                        
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label for="release_date">Release Date</label>
+                        <input  class="form-control" type="date" value="${data.release_date ?? ''}"  name="release_date" />   
+                    </div>
+                </div> 
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label for="menu">Menu Search</label>
+                        <input type="text" name="menu" value="${data.menu ?? ''}" class="form-control" />
+                    </div>
+                </div> 
+                <div class="col-sm-12">
+                    <div class="form-group">
+                       <label for="story">Story</label>
+                       <textarea class="form-control" value="${data.story ?? ''}" name="story" id="story">{{post.story}}</textarea>
+                    </div>
+                </div>
+                `)
+        $('#AddEditModel').modal('show')
 
+    }
 </script>
 
 {% endblock %}

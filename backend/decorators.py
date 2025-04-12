@@ -46,7 +46,7 @@ def xhr_request_only():
                     # kwargs['permission'] = list(Permission.objects.filter(role_id__in=kwargs['roleIds'],modules__module=module).prefetch_related('modules'))
                     # kwargs['permission'] = list(Permission.objects.filter(role_id__in=kwargs['roleIds'],modules__module=module).select_related('modules').values_list('permission',flat=True))
                     kwargs['roleIds'] = list(Roles.objects.using('default').filter(user_id=auth['id']).values_list('role_id', flat=True))
-                    permissions = Permission.objects.using('default').filter(role_id__in=kwargs['roleIds']).select_related('modules')
+                    permissions = Permission.objects.using('default').filter(role_id__in=kwargs['roleIds'],permission__contains='View').select_related('modules')
                     kwargs['module'] = [permission.modules.module for permission in permissions]
                 return view(request, *args, **kwargs)  
             else:
