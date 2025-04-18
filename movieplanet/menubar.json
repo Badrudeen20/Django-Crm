@@ -15,9 +15,9 @@
       {
             "id":3,
             "parentId":2,
-            "name":"480P Movice",
+            "name":"480P Movie",
             "type":"file",
-            "link":"",
+            "link":"http://127.0.0.1:8000/movieplanet/category/Bollywood/480P Movie",
             "icon":""
             
       },

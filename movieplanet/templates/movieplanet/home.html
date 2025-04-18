@@ -78,8 +78,7 @@
 <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script> -->
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.js"></script>
 <script>
-    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-   
+
     $(document).ready( function () {
       loadData()
     })
@@ -87,21 +86,23 @@
       var pgno = 0;
       $('table.display').DataTable({
             "processing" : true,
-		    "serverSide" : true,
+		        "serverSide" : true,
             "lengthChange": false,
             "pageLength" : 4,
             "oSearch": {"sSearch": "{{request.GET.search}}" },
             "displayStart":("{{request.GET.page}}") ?(4*"{{request.GET.page}}")-4 : 0,
             "ordering": false,
             createdRow:function(row, data, dataIndex){
-              let url = "{{ settings.BASE_URL }}/detail/"+data.name.split(' ').join('+')
+              let url = "{{ settings.BASE_URL }}detail/"+data.name.split(' ').join('+')
+              if(data.type=="2"){
+                url = "{{ settings.BASE_URL }}"+data.name.split(' ').join('+')
+              }
+              
              
               let card  = `<article class="card animated fadeInLeft">
                             <img class="card-img-top img-responsive" src="${data.image}" alt="Deer in nature" />
                             <div class="card-body">
-                            
-                            <a class="card-text" href="${url}">${data.name}</a>
-                            
+                              <a class="card-text" href="${url}">${data.name}</a>
                             </div>
                           </article>`
               $(row).addClass('col-xl-4 col-sm-6 col-xs-6 col-md-6 col-6  my-2 border-0');

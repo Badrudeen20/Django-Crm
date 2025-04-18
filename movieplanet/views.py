@@ -36,8 +36,8 @@ def permission(request,*args,**kwargs):
             listData = []
             roles = kwargs.get('roleIds')
             if search :
-                  data = Role.objects.using('movieplanet').filter(name__contains=search,id__in=roles)[startIndex:endIndex].all()
-                  totalLen = list(Role.objects.using('movieplanet').filter(name__contains=search,id__in=roles).all())
+                  data = Role.objects.using('movieplanet').filter(name__icontains=search,id__in=roles)[startIndex:endIndex].all()
+                  totalLen = list(Role.objects.using('movieplanet').filter(name__icontains=search,id__in=roles).all())
             else:
                   data = Role.objects.using('movieplanet').filter(id__in=roles)[startIndex:endIndex].all()
                   totalLen = list(Role.objects.using('movieplanet').filter(id__in=roles).all())
@@ -183,7 +183,14 @@ def menu(request,*args,**kwargs):
                         name = m['name']
                         id = m['id']
                         if 'Edit' in kwargs.get('permission'):
-                              btn = f'<button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#EditModel">Update</button>'
+                              uobj={}
+                              uobj['id'] = id
+                              uobj['name'] = name
+                              uobj['icon'] = m['icon']
+                              if m['type']=='file':
+                                 uobj['link'] = m['link']
+                             
+                              btn = f'<button class="btn btn-primary" data-bs-toggle="modal" onclick="openModal({uobj})">Update</button>'
                         else:
                               btn = f'<button class="btn btn-primary">Update</button>' 
                         if parentId:
@@ -223,7 +230,10 @@ def menu(request,*args,**kwargs):
             "action":action
             }, status=200)
       elif request.method == 'PUT' and 'Edit' in kwargs.get('permission'):
-            pass
+            file_path = os.path.join(settings.BASE_DIR, 'movieplanet', 'toggle.json')
+            data['new_key'] = 'new_value'
+            with open(file_path, 'w', encoding='utf-8') as file:
+                  json.dump(data, file, indent=4)
       else:
             return render(request,"movieplanet/admin/menu.html")
     else:
@@ -240,6 +250,7 @@ def menuFind(menus, pid):
 @permission_required('Posts') 
 def posts(request,*args,**kwargs):
     if 'Posts' in kwargs.get('module') and kwargs.get('access'):
+      parentId = kwargs.get('parentId', None)
       if request.method == 'POST' and 'View' in kwargs.get('permission'):
             start = request.POST['start']
             length = request.POST['length']
@@ -248,12 +259,12 @@ def posts(request,*args,**kwargs):
             endIndex = startIndex + int(length)
             
             if search :
-                  data = Posts.objects.filter(name__contains=search,status=1)[startIndex:endIndex].all()
-                  totalLen = Posts.objects.filter(name__contains=search,status=1).count()
+                  data = Posts.objects.using('movieplanet').filter(Q(parent=parentId),name__icontains=search,status=1)[startIndex:endIndex].all()
+                  totalLen = Posts.objects.using('movieplanet').filter(Q(parent=parentId),name__icontains=search,status=1).count()
             
             else:
-                  data = Posts.objects.filter(status=1).all()[startIndex:endIndex]
-                  totalLen = Posts.objects.filter(status=1).count()
+                  data = Posts.objects.filter(Q(parent=parentId),status=1).all()[startIndex:endIndex]
+                  totalLen = Posts.objects.filter(Q(parent=parentId),status=1).count()
             
             listData = []
             for i in data:
@@ -279,13 +290,15 @@ def posts(request,*args,**kwargs):
                   if 'Delete' in kwargs.get('permission'):
                      btn += f'<button class="btn btn-primary">Delete</button>'
                   
+                  link = i.name
+                  if i.type==2:
+                     link = f'<a href="{settings.BASE_URL}movieplanet/admin/website/posts/{i.id}" >{i.name}</a>'
                   post = {
                         "id":i.id,
-                        "name":i.name,
+                        "name":link,
                         "image":f'<img src={i.image}/>',
                         "rate":i.rate,
                         "action":btn
-
                   }
                         
                   listData.append(post)
@@ -316,7 +329,8 @@ def posts(request,*args,**kwargs):
                         lang=post.get('lang', 'N/A'),
                         story=post.get('story', 'N/A'),
                         status=post.get('status', 0),
-                        link=post.get('link', '')
+                        link=post.get('link', ''),
+                        parent=parentId
                   )
 
                   return JsonResponse({
@@ -387,50 +401,120 @@ def customers(request,*args,**kwargs):
             startIndex = (int(start)-1) * int(length)
             endIndex = startIndex + int(length)
 
-            addBtn = ''
-            # if 'Add' in kwargs.get('permission'):
-            #    addBtn =f'<button class="btn btn-primary" onclick=addEditDelete("Add")>Add User</button>'
+           
             listData = []
             totalLen=0
-
             if search :
-                  data = Customer.objects.filter(is_admin="0",name__contains=search)[startIndex:endIndex].all()
-                  totalLen = Customer.objects.filter(is_admin="0",name__contains=search).count()
+                  data = Customer.objects.using('movieplanet').filter(is_admin="0",name__icontains=search).exclude(id=kwargs.get('authId'))[startIndex:endIndex].all()
+                  totalLen = Customer.objects.using('movieplanet').filter(is_admin="0",name__icontains=search).exclude(id=kwargs.get('authId')).count()
             else:
-                  data = Customer.objects.filter(is_admin="0")[startIndex:endIndex].all()
-                  totalLen = Customer.objects.filter(is_admin="0").count()
+                  data = Customer.objects.using('movieplanet').filter(is_admin="0").exclude(id=kwargs.get('authId'))[startIndex:endIndex].prefetch_related('roles')
+                  totalLen = Customer.objects.using('movieplanet').filter(is_admin="0").exclude(id=kwargs.get('authId')).count()
                   
                   for i in data:
-                        # if 'Delete' in kwargs.get('permission'):
-                        #       deleteBtn = f'<button class="btn btn-sm  btn-danger" onclick=addEditDelete("Delete",{i.id})>Delete</button>'
-                        # else:
-                        #       deleteBtn = ''
-                        # if 'Edit' in kwargs.get('permission'):
-                        #       editBtn = f'<button class="btn btn-sm mx-1 btn-success text-light" onclick=addEditDelete("Edit",{i.id})>Edit</button>'
-                        # else:
-                        #       editBtn = ''
-                        deleteBtn = ''
-                        editBtn=''
+                        
+                        if 'Edit' in kwargs.get('permission'):
+                              rol=[]
+                              for r in i.roles.all():
+                                    urol={
+                                       "user_id":r.user_id,
+                                       "role":r.role.name,
+                                       "assign":r.assign if r.assign else ''
+                                    }
+                                    rol.append(urol)
+                              editbtn = f'<button class="btn btn-sm  btn-danger" onclick="openModal({rol},{i.id})" >Role</button>'
+                        else:
+                              editbtn = ''
+
                         obj = {
                               "id":i.id,
                               "name":i.name,
                               "email":i.email,
-                              "action":(
-                                    f'<button  onclick=userRole({i.id}) class="btn btn-sm btn-info mx-1 text-light">Role</button>'
-                                    f'{editBtn}'
-                                    f'{deleteBtn}'  
-                                    )
+                              "action":editbtn
                         }  
                         
                         listData.append(obj)
+
+            role = Role.objects.using('movieplanet').filter(id__in=kwargs.get('roleIds')).prefetch_related('role')
+            
+            action = []
+            
+            for r in role:
+                if kwargs.get('isAdmin'): 
+                  obj = {
+                        "id":r.id,
+                        "role":r.name,
+                        "assign":True
+                  }
+                  action.append(obj)
+                elif r.role.filter(role_id__in=kwargs.get('roleIds'),user_id=kwargs.get('authId'),assign="1").exists():
+                     obj = {
+                        "id":r.id,
+                        "role":r.name,
+                        "assign":True
+                     }
+                     action.append(obj)
+                  
 
             return JsonResponse({
                         "success": True,
                         "iTotalRecords":totalLen,
                         "iTotalDisplayRecords":totalLen,
                         "aaData":listData,
-                        "permission":addBtn
+                        "action":action
                   }, status=200)
+      elif  request.method == 'PUT' and 'Edit' in kwargs.get('permission'):
+            try:
+                  body_unicode = request.body.decode('utf-8')
+                  if not body_unicode:
+                        return JsonResponse({"error": "Empty request body"}, status=400)
+                  post = json.loads(body_unicode)
+                  
+                  role = Role.objects.using('movieplanet').filter(id__in=kwargs.get('roleIds')).prefetch_related('role')
+                  
+                  action = []
+                  for r in role:
+                        if r.name in post:
+                           
+                              if kwargs.get('isAdmin'): 
+                                    if r.role.filter(role_id=post[r.name],user_id=post['customer']).exists():
+                                       robj = r.role.filter(role_id=post[r.name],user_id=post['customer']).first()
+                                       if "assign"+r.name in post:
+                                          robj.assign = "1"
+                                       else:
+                                          robj.assign = ""
+                                       robj.save()        
+                                    else:
+                                       Roles.objects.create(
+                                          role_id=post[r.name],
+                                          user_id = post['customer'],
+                                          assign =  "1" if post.get("assign" + r.name) else ""
+                                       )
+                              elif r.role.filter(role_id=post[r.name],user_id=kwargs.get('authId'),assign="1").exists():
+                                    if r.role.filter(role_id=post[r.name],user_id=post['customer']).exists():
+                                       
+                                       robj = r.role.filter(role_id=post[r.name],user_id=post['customer']).first()
+                                       if "assign"+r.name in post:
+                                          robj.assign = "1"
+                                       else:
+                                          robj.assign = ""
+                                       robj.save()        
+                                    else:
+                                       print('tt')
+                        else:
+                              Roles.objects.filter(
+                              role_id=r.id,
+                              user_id=post.get('customer'),
+                              ).delete()        
+                                         
+
+                  return JsonResponse({
+                  "status":True,
+                  "message":"Inserted success"
+                  })
+            
+            except json.JSONDecodeError:
+                  return JsonResponse({"error": "Invalid JSON format"}, status=400)
       return render(request,"movieplanet/admin/user.html")
       # return HttpResponseRedirect(request.META['HTTP_REFERER']) 
    else:
@@ -497,22 +581,27 @@ def logout(request):
 
 ########## Frontend ################
 
-def home(request):
+def home(request,*args,**kwargs):
     if request.method == 'POST':
       start = request.POST['start']
       length = request.POST['length']
       search = request.POST['search']
       startIndex = (int(start)-1) * int(length)
       endIndex = startIndex + int(length)
-      
-      
+      Link = kwargs.get('Link', None)
+      if Link:
+            linkList = Link.split("+")
+            Link = " ".join(linkList)
+            parent = Posts.objects.filter(name=Link,status=1).first()
+            Link = parent.id
+     
       if search :
-            data = Posts.objects.filter(name__contains=search,status=1)[startIndex:endIndex].all()
-            totalLen = Posts.objects.filter(name__contains=search,status=1).count()
+            data = Posts.objects.filter(Q(parent=Link),name__icontains=search,status=1)[startIndex:endIndex].all()
+            totalLen = Posts.objects.filter(Q(parent=Link),name__icontains=search,status=1).count()
       
       else:
-            data = Posts.objects.filter(status=1).all()[startIndex:endIndex]
-            totalLen = Posts.objects.filter(status=1).count()
+            data = Posts.objects.filter(Q(parent=Link),status=1)[startIndex:endIndex].all()
+            totalLen = Posts.objects.filter(Q(parent=Link),status=1).count()
       
       listData = []
       for i in data:
@@ -521,8 +610,8 @@ def home(request):
                   "name":i.name,
                   "image":i.image,
                   "rate":i.rate,
-            }
-                  
+                  "type":i.type
+            }     
             listData.append(post)
       
       return JsonResponse({
@@ -534,7 +623,54 @@ def home(request):
     else:
       return render(request,"movieplanet/home.html")
 
-def postDetailView(request,Link=None):
+
+
+def category(request,*args,**kwargs):
+    
+    if request.method == 'POST':
+      start = request.POST['start']
+      length = request.POST['length']
+      search = request.POST['search']
+      startIndex = (int(start)-1) * int(length)
+      endIndex = startIndex + int(length)
+      params  = kwargs.get('params')
+      categories = params.replace("/", " ").split()
+      query = Q()
+
+      for word in categories:
+          query &= Q(menu__icontains=word)
+      print(query)
+      if search :
+            data = Posts.objects.filter(query,parent=None,name__icontains=search,status=1)[startIndex:endIndex].all()
+            totalLen = Posts.objects.filter(query,parent=None,name__icontains=search,status=1).count()
+      
+      else:
+            data = Posts.objects.filter(query,parent=None,status=1)[startIndex:endIndex].all()
+            totalLen = Posts.objects.filter(query,parent=None,status=1).count()
+      
+      listData = []
+      for i in data:
+            post = {
+                  "id":i.id,
+                  "name":i.name,
+                  "image":i.image,
+                  "rate":i.rate,
+                  "type":i.type
+            }     
+            listData.append(post)
+      
+      return JsonResponse({
+      "success": True,
+      "iTotalRecords":totalLen,
+      "iTotalDisplayRecords":totalLen,
+      "aaData":listData
+      }, status=200)
+    else:
+      return render(request,"movieplanet/home.html")
+
+
+
+def detail(request,Link=None):
       linkList = Link.split("+")
       MovieName = " ".join(linkList)
       data = Posts.objects.filter(name=MovieName,status=1).values().first()
@@ -543,6 +679,8 @@ def postDetailView(request,Link=None):
          "post":data
       }
       return render(request,"movieplanet/detail.html",context)
+
+
 
 def menubar(request,*args,**kwargs):
       file_path = os.path.join(settings.BASE_DIR, 'movieplanet', 'menubar.json')
@@ -558,7 +696,7 @@ def menubar(request,*args,**kwargs):
                                                 f'{menuLoop(menus,m["id"])}'
                                                 f'</li>')
                               elif m['type']=='file':  
-                                    MenuHtml += (f'<li><a class="nav-link dropdown-link dropdown-btn" data-dropdown="dropdown{m["id"]}" href="#" aria-haspopup="true" aria-expanded="false">{m["name"]}</a></li>')
+                                    MenuHtml += (f'<li><a class="nav-link dropdown-link dropdown-btn" data-dropdown="dropdown{m["id"]}" href="{m["link"]}" aria-haspopup="true" aria-expanded="false">{m["name"]}</a></li>')
 
                               
                   
@@ -583,7 +721,7 @@ def menuLoop(Menus=[],MenuId=None,IsLoop=None):
                               f'{menuLoop(Menus,m["id"],True)}'
                               f'</li>')
             elif m['type']=='file':  
-                 menu += (f'<li><a class="nav-link dropdown-link dropdown-btn" data-dropdown="dropdown{m["id"]}" href="#" aria-haspopup="true" aria-expanded="false">{m["name"]}</a></li>')
+                 menu += (f'<li><a class="nav-link dropdown-link dropdown-btn" data-dropdown="dropdown{m["id"]}" href="{m["link"]}" aria-haspopup="true" aria-expanded="false">{m["name"]}</a></li>')
 
                                    
    menu +='</ul></div>'
@@ -748,8 +886,8 @@ def menu(request):
       
       
       if search :
-            data = Menu.objects.filter(name__contains=search,status=1)[startIndex:endIndex].all()
-            totalLen = Menu.objects.filter(name__contains=search,status=1).count()
+            data = Menu.objects.filter(name__icontains=search,status=1)[startIndex:endIndex].all()
+            totalLen = Menu.objects.filter(name__icontains=search,status=1).count()
       
       else:
             data = Menu.objects.filter(status=1).all()[startIndex:endIndex]

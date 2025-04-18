@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.hashers import make_password, check_password
 from django.utils import timezone
+
 class Posts(models.Model):
 
     FILE_TYPE_CHOICES = [
@@ -17,6 +18,7 @@ class Posts(models.Model):
     link = models.CharField(max_length=100)
     type = models.IntegerField(choices=FILE_TYPE_CHOICES, default=1)
     more = models.TextField()
+    parent = models.TextField(null=True, blank=True)
     status = models.CharField(max_length=100)
     starcast=models.TextField()
     menu=models.TextField(null=True, blank=True)
@@ -91,8 +93,9 @@ class Role(models.Model):
     status = models.CharField(max_length=100)
 
 class Roles(models.Model):
-    user =  models.ForeignKey(Customer, on_delete=models.CASCADE)
-    role = models.ForeignKey(Role, on_delete=models.CASCADE)
+    user =  models.ForeignKey(Customer, on_delete=models.CASCADE,related_name='roles')
+    role = models.ForeignKey(Role, on_delete=models.CASCADE,related_name='role')
+    assign = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
 class Permission(models.Model):

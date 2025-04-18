@@ -5,16 +5,16 @@
 {% block content %}
 <div class="container d-flex justify-content-center">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.css" />
-<style>
+<!-- <style>
     .bootstrap-select{
         width: 100%!important;
         margin-bottom: 20px!important;
     }
-</style>
+</style> -->
 <!-- <link rel="stylesheet" href= "https://cdnjs.cloudflare.com/ajax/libs/chosen/1.4.2/chosen.min.css" />  -->
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.1/css/select2.min.css" />  -->
 <div class="container mt-2">
-    <div class="btn-container"></div>
+    
     <div class="row">
         <div class="col-12">
             <table id="customer_table"  class="display" style="width:100%">
@@ -34,76 +34,24 @@
   
 </div>
 
-<!-- Add Edit -->
-<div class="modal fade" id="addEditModel" tabindex="-1" role="dialog" aria-labelledby="EditModel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-      <form class="modal-content" method="post" id="addEditForm">
-        {% csrf_token %}
-            <div class="modal-header">
-                <h5 class="modal-title" id="addEditModelTitle">Modal Edit</h5>
-            </div>
-            <div class="modal-body" id="user-action">
 
-               
-            </div>
-            <div class="modal-footer">
-                <button type="submit" class="btn btn-primary">Save </button>
-            </div>
-      </form>
-    </div>
-</div>
+
 
 
 <!-- Role -->
 <div class="modal fade" id="RoleModal" tabindex="-1" role="dialog" aria-labelledby="RoleModal" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-dialog" role="document">
       <form class="modal-content" method="post" id="RoleForm">
         {% csrf_token %}
-
             <div class="modal-header">
-                <h5 class="modal-title" id="EditModelTitle">Modal Role</h5>
-            </div>
-            <div class="modal-body">
-                <div id="user-id"></div>
-                <div class="form-group">
-                    <label class="form-label">Group</label>
-                    <select class="mul-group" name="group[]" multiple id="user-group"  data-live-search="true">    
-                    </select>
-                </div>
-
-
-                <div class="form-group">
-                    <label class="form-label">Role</label>
-                    <select class="mul-group" name="role[]" multiple id="user-role"  data-live-search="true">
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="submit" class="btn btn-primary">Save </button>
-            </div>
-      </form>
-    </div>
-</div>
-
-
-<!-- Delete -->
-<div class="modal fade" id="DelModel" tabindex="-1" role="dialog" aria-labelledby="DelModel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-      <form class="modal-content" method="post" id="EditForm">
-        {% csrf_token %}
-            <div class="modal-header">
-            <h5 class="modal-title" id="DelModelTitle">Modal Delete</h5>
+            <h5 class="modal-title" id="RoleModalTitle">Modal Role</h5>
                 
             </div>
-            <div class="modal-body">
-                        <div class="form-group">
-                            <label for="content">Are you sure</label>
-                            <input type="hidden" name="action" value="DELETE">
-                            <input type="hidden" name="delid"  >
-                        </div> 
+            <div class="modal-body" id="role-field">
+
             </div>
             <div class="modal-footer">
-                <button type="submit" class="btn btn-primary">Delete</button>
+                <button type="submit" class="btn btn-primary">Submit</button>
             </div>
         </form>
     </div>
@@ -115,7 +63,7 @@
 <script>
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
     $(document).ready( function () {
-        $('.mul-group').selectpicker();
+        // $('.mul-group').selectpicker();
         // $(".group-select").select2({});
         // $(".role-select").chosen(); 
         loadData()
@@ -140,10 +88,34 @@
                     data:{start:pgno, length:4,search:search,type:'FETCH'}
                 }).then ( function( json, textStatus, jqXHR ) {
                     // console.log(json)
-                    $('.btn-container').html(json.permission)
-                    //  json["data"] = json["aaData"];
-                    //  json["recordsTotal"] = json["aaData"];
-                     callback(json);
+                    if(json.success){
+                        let html =`
+                        <input type="hidden" name="customer"  />
+                        <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Role</th>
+                            <th scope="col">Permission</th>
+                            <th scope="col">Assion</th>
+                            </tr>
+                        </thead>
+                        <tbody>`
+            
+            
+                        json.action?.forEach((ele,idx)=>{
+                            html +=`<tr>
+                                    <th scope="row">${++idx}</th>
+                                    <td>${ele.role}</td>
+                                    <td><input type="checkbox" name="${ele.role}" value="${ele.id}" class="form-check-input" /></td>
+                                    <td><input type="checkbox" name="assign${ele.role}" value="1" class="form-check-input" /></td>
+                                    </tr>`
+                        })
+                        html +=`</tbody>
+                        </table>`
+                        $('#role-field').html(html)
+                    }
+                    callback(json);
                 });
             },
             // pageLength: 10,
@@ -157,7 +129,46 @@
          
         });
     }
-   
+    
+    function openModal(role=[],userId){
+        
+        if(role.length){
+            $(`input[type=checkbox]`).prop('checked',false)
+            $(`input[name=customer]`).val(userId)
+            
+            role.forEach((ele)=>{
+              $(`input[name=${ele.role}]`).prop('checked',true)
+              if(ele.assign=="1"){
+                $(`input[name=assign${ele.role}]`).prop('checked',true)
+              }
+            })
+
+           $('#RoleModal').modal('show')
+        }
+    }
+
+    $('#RoleForm').submit(function(e){
+        e.preventDefault()
+        const formData = Object.fromEntries($(this).serializeArray().map(x => [x.name, x.value]));
+        $.ajax({
+            url: '{{ settings.BASE_URL }}', // Replace with your server endpoint
+            method: 'PUT',
+            data: JSON.stringify(formData),
+            headers: {'X-CSRFToken': csrftoken},
+            contentType: 'application/json',
+            success: function(response) {
+                if(response.status){
+                    $('#RoleModal').modal('hide');
+                    $('table.display').DataTable().clear().destroy();
+                    loadData()
+                }
+               
+            },
+            error: function(xhr) {
+                console.error('Error submitting form:', xhr.responseText);
+            }
+        });
+    })
 
 
 

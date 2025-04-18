@@ -11,11 +11,13 @@ def permission_required(module):
         @wraps(view)
         def wrapper(request, *args, **kwargs):
             auth = authUser(request)
+            kwargs['authId'] = auth['id']
             if auth['is_admin']:
                 kwargs['roleIds'] = list(Role.objects.all().values_list('id', flat=True))
                 kwargs['permission'] = ['View','Add','Edit','Delete']
                 kwargs['module'] = list(Module.objects.using('movieplanet').filter(module=module).values_list('module', flat=True))
                 kwargs['access'] = True 
+                kwargs['isAdmin'] = True
             else:
                 kwargs['roleIds'] = list(Roles.objects.using('movieplanet').filter(user_id=auth['id']).values_list('role_id', flat=True))
                 permissions = Permission.objects.using('movieplanet').filter(role_id__in=kwargs['roleIds'],modules__module=module).select_related('modules')
@@ -25,6 +27,7 @@ def permission_required(module):
                 kwargs['module'] = [permission.modules.module for permission in permissions]
                 parentIds = list(permissions.values_list('module_parent_id', flat=True))
                 kwargs['access'] = checkAccess(parentIds,kwargs['roleIds']) 
+                kwargs['isAdmin'] = False
             return view(request, *args, **kwargs)     
         return wrapper
     return decorator
@@ -36,16 +39,16 @@ def xhr_request_only():
         def wrapper(request, *args, **kwargs):
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 auth = authUser(request)
-
+                kwargs['authId'] = auth['id']
                 if auth['is_admin']:
                     kwargs['roleIds'] = list(Role.objects.using('movieplanet').all().values_list('id', flat=True))
                     kwargs['module'] = list(Module.objects.using('movieplanet').values_list('module', flat=True))
-                    
+                    kwargs['isAdmin'] = True
                 else:
                     kwargs['roleIds'] = list(Roles.objects.using('movieplanet').filter(user_id=auth['id']).values_list('role_id', flat=True))
                     permissions = Permission.objects.using('movieplanet').filter(role_id__in=kwargs['roleIds'],permission__contains='View').select_related('modules')
                     kwargs['module'] = [permission.modules.module for permission in permissions]
-                
+                    kwargs['isAdmin'] = False
                 return view(request, *args, **kwargs)  
             else:
                 return JsonResponse({
