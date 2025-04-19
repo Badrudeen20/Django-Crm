@@ -319,33 +319,31 @@ def posts(request,*args,**kwargs):
                   if not body_unicode:
                         return JsonResponse({"error": "Empty request body"}, status=400)
                   post = json.loads(body_unicode)
-                  Posts.objects.create(
-                        name=post['name'],
-                        image=post.get('image', ''),
-                        rate=post.get('rate', 'N/A'),
-                        size=post.get('size', 'N/A'),
-                        genre=post.get('genre', 'N/A'),
-                        type=post.get('type', 2),
-                        lang=post.get('lang', 'N/A'),
-                        story=post.get('story', 'N/A'),
-                        status=post.get('status', 0),
-                        link=post.get('link', ''),
-                        parent=parentId
-                  )
-
+                  if Posts.objects.filter(name=post['name']).exists():
+                       msg="Movie exist"
+                  else:
+                        Posts.objects.create(
+                              name=post['name'],
+                              image=post.get('image', ''),
+                              rate=post.get('rate', 'N/A'),
+                              size=post.get('size', 'N/A'),
+                              genre=post.get('genre', 'N/A'),
+                              type=post.get('type', 2),
+                              lang=post.get('lang', 'N/A'),
+                              story=post.get('story', 'N/A'),
+                              status=post.get('status', 0),
+                              link=post.get('link', ''),
+                              parent=parentId
+                        )
+                        msg="Inserted success"
                   return JsonResponse({
-                  "status":True,
-                  "message":"Inserted success"
+                        "status":True,
+                        "message":msg
                   })
             
             except json.JSONDecodeError:
                   return JsonResponse({"error": "Invalid JSON format"}, status=400)
       else:
-            # file_path = os.path.join(settings.BASE_DIR, 'movieplanet', 'menubar.json')
-            # menus = []
-            # with open(file_path, 'r') as file:
-            #       menus =  json.load(file)
-            #       print(menus)
             return render(request,"movieplanet/admin/post.html")
     else:
       return render(request,"movieplanet/404.html")  
@@ -401,38 +399,42 @@ def customers(request,*args,**kwargs):
             startIndex = (int(start)-1) * int(length)
             endIndex = startIndex + int(length)
 
-           
+            # print(kwargs.get('roleIds'))
             listData = []
             totalLen=0
+            
+            excIds = list(Roles.objects.using('movieplanet').filter(user_id=kwargs.get('authId')).values_list('given_id',flat=True))
+            excIds.append(kwargs.get('authId'))
             if search :
-                  data = Customer.objects.using('movieplanet').filter(is_admin="0",name__icontains=search).exclude(id=kwargs.get('authId'))[startIndex:endIndex].all()
-                  totalLen = Customer.objects.using('movieplanet').filter(is_admin="0",name__icontains=search).exclude(id=kwargs.get('authId')).count()
+                  data = Customer.objects.using('movieplanet').filter(is_admin="0",name__icontains=search).exclude(id__in=excIds)[startIndex:endIndex].all()
+                  totalLen = Customer.objects.using('movieplanet').filter(is_admin="0",name__icontains=search).exclude(id__in=excIds).count()
             else:
-                  data = Customer.objects.using('movieplanet').filter(is_admin="0").exclude(id=kwargs.get('authId'))[startIndex:endIndex].prefetch_related('roles')
-                  totalLen = Customer.objects.using('movieplanet').filter(is_admin="0").exclude(id=kwargs.get('authId')).count()
+                  data = Customer.objects.using('movieplanet').filter(is_admin="0").exclude(id__in=excIds)[startIndex:endIndex].prefetch_related('roles')
+                  totalLen = Customer.objects.using('movieplanet').filter(is_admin="0").exclude(id__in=excIds).count()
+            
+            
+            for i in data:
                   
-                  for i in data:
-                        
-                        if 'Edit' in kwargs.get('permission'):
-                              rol=[]
-                              for r in i.roles.all():
-                                    urol={
-                                       "user_id":r.user_id,
-                                       "role":r.role.name,
-                                       "assign":r.assign if r.assign else ''
-                                    }
-                                    rol.append(urol)
-                              editbtn = f'<button class="btn btn-sm  btn-danger" onclick="openModal({rol},{i.id})" >Role</button>'
-                        else:
-                              editbtn = ''
-
+                  if 'Edit' in kwargs.get('permission'):
+                        rol=[]
+                        for r in i.roles.all():
+                              urol={
+                                    "user_id":r.user_id,
+                                    "role":r.role.name,
+                                    "assign":r.assign if r.assign else ''
+                              }
+                              rol.append(urol)
+                        editbtn = f'<button class="btn btn-sm  btn-danger" onclick="openModal({rol},{i.id})" >Role</button>'
+                  else:
+                        editbtn = ''
+                  roles = list(i.roles.values_list('role_id',flat=True))
+                  if kwargs.get('roleIds') == roles or roles==[] or kwargs.get('isAdmin') or all(item in kwargs.get('roleIds') for item in roles):
                         obj = {
                               "id":i.id,
                               "name":i.name,
                               "email":i.email,
                               "action":editbtn
                         }  
-                        
                         listData.append(obj)
 
             role = Role.objects.using('movieplanet').filter(id__in=kwargs.get('roleIds')).prefetch_related('role')
@@ -483,24 +485,26 @@ def customers(request,*args,**kwargs):
                                           robj.assign = "1"
                                        else:
                                           robj.assign = ""
+                                       robj.given_id = kwargs.get('authId')
                                        robj.save()        
                                     else:
                                        Roles.objects.create(
                                           role_id=post[r.name],
                                           user_id = post['customer'],
-                                          assign =  "1" if post.get("assign" + r.name) else ""
+                                          assign =  "1" if post.get("assign" + r.name) else "",
+                                          given_id = kwargs.get('authId')
                                        )
                               elif r.role.filter(role_id=post[r.name],user_id=kwargs.get('authId'),assign="1").exists():
                                     if r.role.filter(role_id=post[r.name],user_id=post['customer']).exists():
-                                       
                                        robj = r.role.filter(role_id=post[r.name],user_id=post['customer']).first()
                                        if "assign"+r.name in post:
                                           robj.assign = "1"
                                        else:
                                           robj.assign = ""
+                                       robj.given_id = kwargs.get('authId')
                                        robj.save()        
                                     else:
-                                       print('tt')
+                                       pass                                       
                         else:
                               Roles.objects.filter(
                               role_id=r.id,
@@ -639,7 +643,6 @@ def category(request,*args,**kwargs):
 
       for word in categories:
           query &= Q(menu__icontains=word)
-      print(query)
       if search :
             data = Posts.objects.filter(query,parent=None,name__icontains=search,status=1)[startIndex:endIndex].all()
             totalLen = Posts.objects.filter(query,parent=None,name__icontains=search,status=1).count()

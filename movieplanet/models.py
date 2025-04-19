@@ -96,6 +96,7 @@ class Roles(models.Model):
     user =  models.ForeignKey(Customer, on_delete=models.CASCADE,related_name='roles')
     role = models.ForeignKey(Role, on_delete=models.CASCADE,related_name='role')
     assign = models.TextField(null=True, blank=True)
+    given = models.ForeignKey(Customer, on_delete=models.CASCADE,related_name='given',    null=True,blank=True,default=None)
     created_at = models.DateTimeField(auto_now_add=True)
 
 class Permission(models.Model):
