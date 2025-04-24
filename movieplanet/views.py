@@ -22,7 +22,6 @@ from movieplanet.decorators import (
 def dashboard(request):
     return render(request,"movieplanet/admin/dashboard.html")
 
-
 @permission_required('Permission')
 def permission(request,*args,**kwargs):
    if 'Permission' in kwargs.get('module') and kwargs.get('access'):
@@ -319,23 +318,40 @@ def posts(request,*args,**kwargs):
                   if not body_unicode:
                         return JsonResponse({"error": "Empty request body"}, status=400)
                   post = json.loads(body_unicode)
-                  if Posts.objects.filter(name=post['name']).exists():
+                  if Posts.objects.filter(name=post['name']).exclude(id=post['post']).exists():
                        msg="Movie exist"
                   else:
-                        Posts.objects.create(
-                              name=post['name'],
-                              image=post.get('image', ''),
-                              rate=post.get('rate', 'N/A'),
-                              size=post.get('size', 'N/A'),
-                              genre=post.get('genre', 'N/A'),
-                              type=post.get('type', 2),
-                              lang=post.get('lang', 'N/A'),
-                              story=post.get('story', 'N/A'),
-                              status=post.get('status', 0),
-                              link=post.get('link', ''),
-                              parent=parentId
-                        )
-                        msg="Inserted success"
+                        if post['post']:
+                           update = Posts.objects.filter(id=post['post']).first()
+                           update.image = post.get('image', '')
+                           update.rate = post.get('rate', '')
+                           update.size = post.get('size', '')
+                           update.genre = post.get('genre', '')
+                           update.lang = post.get('lang', '')
+                           update.status = post.get('status', '')
+                           update.story = post.get('story', '')
+                           update.link = post.get('link', '')
+                           update.menu = post.get('menu', '')
+                           update.release_date = post.get('release_date', '')
+                           update.save()
+                           msg="Updated success"
+                        else:
+                              Posts.objects.create(
+                                    name=post['name'],
+                                    image=post.get('image', ''),
+                                    rate=post.get('rate', 'N/A'),
+                                    size=post.get('size', 'N/A'),
+                                    genre=post.get('genre', 'N/A'),
+                                    type=post.get('type', 2),
+                                    lang=post.get('lang', 'N/A'),
+                                    story=post.get('story', 'N/A'),
+                                    status=post.get('status', 0),
+                                    link=post.get('link', ''),
+                                    menu=post.get('menu', ''),
+                                    release_date=post.get('release_date', ''),
+                                    parent=parentId
+                              )
+                              msg="Inserted success"
                   return JsonResponse({
                         "status":True,
                         "message":msg

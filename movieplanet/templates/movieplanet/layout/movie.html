@@ -5,6 +5,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0/css/bootstrap.css' rel='stylesheet'>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 {% csrf_token %}
 <style>
   /* style.css */
@@ -97,10 +98,14 @@ button {
   min-width:  230px;
 }
 
-/* .menu-bar li:first-child ul:nth-child(1) {
-  border-right: var(--border);
-} */
-
+.dataTables_filter{
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+}
+.dataTables_filter > button{
+  height: 35px;
+}
 .menu-bar li:nth-child(n + 2) ul:nth-child(1) {
   border-bottom: var(--border);
 }
@@ -232,7 +237,7 @@ button {
   #hamburger {
     display: block;
   }
-
+ 
   .container {
     padding: 1.2rem;
   }
@@ -309,9 +314,11 @@ button {
 } */
 
 </style>
+<!-- <script src="https://code.jquery.com/jquery-3.7.1.js"></script> -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
 <script>
   const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  const baseUrl = "{{ request.scheme }}://{{ request.get_host }}/movieplanet";
 </script>
 </head>
 <body>

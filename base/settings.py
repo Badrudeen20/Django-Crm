@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'channels',
     'backend',
-    'movieplanet'
+    'movieplanet',
+    'websocket'
     
 ]
 

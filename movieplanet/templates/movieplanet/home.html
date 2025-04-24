@@ -2,7 +2,11 @@
 
 
 {% block content %}
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.css" />
+   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.css" />
+   <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+
+   <!-- <link rel="stylesheet" href="https://cdn.datatables.net/2.2.2/css/dataTables.dataTables.css" />
+   <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.2/css/buttons.dataTables.css" /> -->
    <style>
     .card-block {
     font-size: 1em;
@@ -74,9 +78,12 @@
  
     </div>
    
-<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script> -->
-<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script> -->
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+
+<!-- <script src="https://cdn.datatables.net/2.2.2/js/dataTables.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.2.2/js/dataTables.buttons.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.2.2/js/buttons.dataTables.js"></script> -->
 <script>
 
     $(document).ready( function () {
@@ -93,12 +100,10 @@
             "displayStart":("{{request.GET.page}}") ?(4*"{{request.GET.page}}")-4 : 0,
             "ordering": false,
             createdRow:function(row, data, dataIndex){
-              let url = "{{ settings.BASE_URL }}detail/"+data.name.split(' ').join('+')
+              let url = baseUrl+"/detail/"+data.name.split(' ').join('+')
               if(data.type=="2"){
-                url = "{{ settings.BASE_URL }}"+data.name.split(' ').join('+')
+                url = baseUrl+"/"+data.name.split(' ').join('+')
               }
-              
-             
               let card  = `<article class="card animated fadeInLeft">
                             <img class="card-img-top img-responsive" src="${data.image}" alt="Deer in nature" />
                             <div class="card-body">
@@ -111,12 +116,6 @@
             ajax: function (data, callback, settings) {
                 var api = this.api();
                 var search =  api.search() 
-                // if("{{request.GET.search}}"){
-                //   var search =  "{{request.GET.search}}"
-                // }else{
-                //   var search =  api.search() 
-                // }
-                
                 var pageInfo = api.page.info();
                 pgno =  pageInfo.page+1;
                 let param = '?page='+pgno
@@ -142,10 +141,38 @@
                 { data: "name" },
                 { data: "rate" },  
             ],
+            initComplete: function () {
+                // Create the custom button
+                const customBtn = $(`
+                    <button class="btn btn-sm btn-info">
+                        Filter <i class="fa fa-filter me-1"></i> 
+                    </button>
+                `);
+
+                // Append the button to the filter container
+                $('.dataTables_filter').prepend(customBtn);
+
+                // Button click action
+                $('#filterBtn').on('click', function () {
+                    alert('Custom filter clicked');
+                    // You can open a modal or apply custom logic here
+                });
+            }
+            // dom: 'Bfrtip', // B = buttons, f = filter, r = processing, t = table, i = info, p = pagination
+            // buttons: [
+            //     {
+            //         text: 'Filter <i class="fa fa-filter me-1"></i>',
+            //         className: 'btn btn-primary',
+            //         action: function (e, dt, node, config) {
+            //             alert('Add customer clicked');
+            //         }
+            //     }
+            // ],
             
         });
         
     }
+
 
 
 </script>

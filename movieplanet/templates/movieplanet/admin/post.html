@@ -178,36 +178,14 @@
             }
         });
     })
-    $('#excel-post-form').submit(function(e){
-        e.preventDefault();
-        const formData = new FormData(this);
 
-        $.ajax({
-            url: "{% url 'movieplanet:excelPost' %}",  // 👈 update this with your Django URL
-            type: 'POST',
-            headers: {'X-CSRFToken': csrftoken},
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function(response) {
-                if(response.status){
-                    $('#ExcelPostModel').modal('hide');
-                    $('table.display').DataTable().clear().destroy();
-                    loadData()
-                }
-            },
-            error: function(xhr) {
-                console.log('Upload Failed:', xhr.responseText);
-                alert('Upload failed.');
-            }
-        });
-    })
-    
     function openModal(data={}){
-        $('#modal-fields').html(`<div class="col-sm-6">
+        $('#modal-fields').html(`
+                <input type="hidden" class="form-control" name="post" id="post" value="${data.id ?? ''}">
+                <div class="col-sm-6">
                     <div class="form-group">
                         <label for="name">Name</label>
-                        <input type="text" class="form-control" name="name" id="name" value="${data.name ?? ''}"  placeholder="Enter post">
+                        <input type="text" class="form-control"  name="name" id="name" value="${data.name ?? ''}"  placeholder="Enter post">
                     </div>
                 </div>
                 <div class="col-sm-6">
@@ -290,6 +268,33 @@
         $('#AddEditModel').modal('show')
 
     }
+
+    /*
+    $('#excel-post-form').submit(function(e){
+        e.preventDefault();
+        const formData = new FormData(this);
+
+        $.ajax({
+            url: "{ url 'movieplanet:excelPost' %}",  // 👈 update this with your Django URL
+            type: 'POST',
+            headers: {'X-CSRFToken': csrftoken},
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if(response.status){
+                    $('#ExcelPostModel').modal('hide');
+                    $('table.display').DataTable().clear().destroy();
+                    loadData()
+                }
+            },
+            error: function(xhr) {
+                console.log('Upload Failed:', xhr.responseText);
+                alert('Upload failed.');
+            }
+        });
+    })
+    */
 </script>
 
 {% endblock %}
