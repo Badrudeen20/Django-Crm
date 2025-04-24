@@ -13,4 +13,5 @@ urlpatterns = [
    path('administration/module/',views.module),
    path('administration/module/<int:parentId>',views.module),
    path('administration/users',views.users),
+   path('setting/chat',views.chat),
 ]

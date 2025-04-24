@@ -7,13 +7,7 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.css" />
 
 <div class="container mt-2">
-    {% if parentId %}
-        <!-- <a class="btn btn-sm btn-primary" href="{{ settings.BASE_URL }}/dashboard/administration/module/add/{{parentId}}" style="margin-block: 20px;">Add Module</a> -->
-        <button class="btn btn-sm btn-primary my-2" id="add-module">Add module</button>
-    {% else %}
-        <button class="btn btn-sm btn-primary my-2" id="add-module">Add module</button>
-        <!-- <a class="btn btn-sm btn-primary" href="{{ settings.BASE_URL }}/dashboard/administration/module/add" style="margin-block: 20px;">Add Module</a> -->
-    {% endif %}
+    <div class="action"></div>
     <div class="row">
         <div class="col-12">
             <table id="customer_table"  class="display" style="width:100%">
@@ -39,14 +33,13 @@
         {% csrf_token %}
             <div class="modal-header">
                 <h5 class="modal-title" id="AddEditTitle">Modal</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
                <div class="msg"></div>
-                <input type="hidden" name="parent_id" id="parent_id" value="{{parentId}}" />             
-                <input type="hidden" name="module_id" id="module_id" value="" />             
+                           
                 <div class="form-group">
                     <label for="module">Module</label>
                     <input type="text" class="form-control" required name="module" id="module"  placeholder="Enter label">
@@ -65,39 +58,13 @@
                
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="submit" class="btn btn-primary">Save </button>
             </div>
       </form>
     </div>
 </div>
 
-
-<!-- Delete -->
-<div class="modal fade" id="DelModel" tabindex="-1" role="dialog" aria-labelledby="DelModel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-      <form class="modal-content" method="post">
-        {% csrf_token %}
-            <div class="modal-header">
-            <h5 class="modal-title" id="DelModelTitle">Modal Delete</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                        <div class="form-group">
-                            <label for="content">Are you sure</label>
-                            <input type="hidden" name="type" value="DELETE">
-                            <input type="hidden" name="delid"  >
-                        </div> 
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                <button type="submit" class="btn btn-primary">Delete</button>
-            </div>
-        </form>
-    </div>
-</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.js"></script>
@@ -109,8 +76,25 @@
 
     $('#AddEditForm').submit(function(e){
         e.preventDefault()
-        // console.log($(this).serializeArray())
-        addEditModel('POST',$(this).serialize())
+        const formData = Object.fromEntries($(this).serializeArray().map(x => [x.name, x.value]));
+        $.ajax({
+            url: '{{ settings.BASE_URL }}', // Replace with your server endpoint
+            method: 'PUT',
+            data: JSON.stringify(formData),
+            headers: {'X-CSRFToken': csrftoken},
+            contentType: 'application/json',
+            success: function(response) {
+                $('#AddEditModel').modal('hide');
+                if(response.success){ 
+                    $('table.display').DataTable().clear().destroy();
+                    loadData()
+                }
+               
+            },
+            error: function(xhr) {
+                console.error('Error submitting form:', xhr.responseText);
+            }
+        });
     })
   
     
@@ -137,6 +121,9 @@
                     data:{start:pgno, length:4,search:search}
                 }).then ( function( json, textStatus, jqXHR ) {
                     console.log(json)
+                    if(json.success){
+                        $('.action').html(json.action.add)
+                    }
                      callback(json);
                 });
             },
@@ -161,18 +148,8 @@
             $('#url-container').html('')
         }
     })
-    $('#add-module').click(function(){
-        addEditModel('GET',{})
-    })
-    
-   
 
-    function delModel(id){
-        $('#DelModel').modal('show');
-        $('[name="delid"]').val(id);
-    }
 
-    
 </script>
 
 {% endblock %}

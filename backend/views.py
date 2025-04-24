@@ -206,7 +206,7 @@ def checkParent(role,module,mid):
 def module(request,*args,**kwargs):
    if 'Module' in kwargs.get('module') and kwargs.get('access'):
       parentId = kwargs.get('parentId', '')
-      if request.method == 'POST':
+      if request.method == 'POST' and 'View' in kwargs.get('permission'):
             start = request.POST['start']
             length = request.POST['length']
             search = request.POST['search']
@@ -225,22 +225,50 @@ def module(request,*args,**kwargs):
             
             for i in data:
                   if i.moduleType=='2':
-                        module = f'<a href="{settings.BASE_URL}movieplanet/admin/administration/module/{i.id}">{i.module}</a>'
+                        module = f'<a href="{settings.BASE_URL}admin/administration/module/{i.id}">{i.module}</a>'
                   else:
                         module = i.module
+                  
                   permission = {
                         "id":i.id,
                         "module":module,
-                        "action":(f'<a href="{settings.BASE_URL}movieplanet/admin/administration/module/{i.id}/delete" class="btn btn-sm btn-danger" >Delete</a>')
+                        "action":(f'<a href="{settings.BASE_URL}admin/administration/module/{i.id}/delete" class="btn btn-sm btn-danger" >Delete</a>')
                   }  
                   listData.append(permission)
-            
+            action = {}
+            if 'Edit' in kwargs.get('permission'):
+                action['add'] = f'<button class="btn btn-sm btn-primary my-2" data-bs-toggle="modal" data-bs-target="#AddEditModel">Add module</button>' 
             return JsonResponse({
             "success": True,
             "iTotalRecords":totalLen,
             "iTotalDisplayRecords":totalLen,
-            "aaData":listData
+            "aaData":listData,
+            "action":action
             }, status=200)  
+      elif request.method == 'PUT' and 'Edit' in kwargs.get('permission'):    
+
+
+            try:
+                  body_unicode = request.body.decode('utf-8')
+                  if not body_unicode:
+                        return JsonResponse({"error": "Empty request body"}, status=400)
+                  post = json.loads(body_unicode)
+
+                  Module.objects.using('default').create(
+                  module=post['module'],
+                  moduleType = post['moduleType'],
+                  url = post['url'] if 'url' in post else '',
+                  parent_id=parentId
+                  )
+                  return JsonResponse({
+                  "status":True,
+                  "message":"Inserted success"
+                  })
+            
+            except json.JSONDecodeError:
+                  return JsonResponse({"error": "Invalid JSON format"}, status=400)
+     
+
       else:
             return render(request,"backend/admin/module.html")
    else:
@@ -298,7 +326,12 @@ def users(request,*args,**kwargs):
       return render(request,"backend/404.html")       
 
 
-
+@permission_required('Chat')   
+def chat(request,*args,**kwargs):
+    if 'Chat' in kwargs.get('module') and kwargs.get('access'):
+      return render(request,"backend/admin/chat.html")
+    else:
+      return render(request,"backend/404.html")     
 
 
 """

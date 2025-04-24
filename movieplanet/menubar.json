@@ -3,7 +3,7 @@
             "id":1,
             "name":"Home",
             "type":"file",
-            "link":"",
+            "link":"http://127.0.0.1:8000/movieplanet/",
             "icon":""
       },
       {
@@ -32,7 +32,7 @@
             "parentId":4,
             "name":"Hindi Movie",
             "type":"file",
-            "link":"",
+            "link":"http://127.0.0.1:8000/movieplanet/category/Animation/Hindi Movie",
             "icon":""
             
       },
@@ -41,7 +41,7 @@
             "parentId":4,
             "name":"480 Movie",
             "type":"file",
-            "link":"",
+            "link":"http://127.0.0.1:8000/movieplanet/category/Animation/480 Movie",
             "icon":""
             
       },
@@ -65,7 +65,7 @@
             "parentId":8,
             "name":"Popcon",
             "type":"file",
-            "link":"",
+            "link":"http://127.0.0.1:8000/movieplanet/category/Webseries/Netflix/Popcon",
             "icon":""
       },
       {
@@ -73,7 +73,7 @@
             "parentId":8,
             "name":"HBO",
             "type":"file",
-            "link":"",
+            "link":"http://127.0.0.1:8000/movieplanet/category/Webseries/Netflix/HBO",
             "icon":""
       }
 

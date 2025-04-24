@@ -349,46 +349,6 @@ def posts(request,*args,**kwargs):
       return render(request,"movieplanet/404.html")  
 
 
-def excelPost(request,*args,**kwargs):
-      try:
-            if request.FILES["excel_file"]:
-                  excel_file = request.FILES["excel_file"]
-                  wb = openpyxl.load_workbook(excel_file)
-                  # sheets = wb.sheetnames
-                  worksheet = wb["Posts"]
-                  # active_sheet = wb.active
-                  excel_data = list()
-                  for i, row in enumerate(worksheet.iter_rows()):
-                        if i == 0:
-                           continue 
-                        row_data = list()
-                        for cell in row:
-                              row_data.append(str(cell.value))
-                        excel_data.append(row_data)
-                  posts = []
-                  for row in excel_data:
-                        posts.append(Posts(
-                              name=row[0],
-                              rate=int(row[1]),
-                              size=int(row[2]),
-                              lang=row[3],
-                              image=row[4],
-                              genre=row[5],
-                              link=row[6],
-                              starcast=row[7],
-                              type=int(row[8]),
-                              status=int(row[9]),
-                              # release_date=datetime.strptime(raw_date, "%d-%m-%Y %H:%M:%S"),
-                              story=row[11]
-                        ))           
-                  Posts.objects.bulk_create(posts)
-                  return JsonResponse({
-                  "status":True,
-                  "message":"Inserted success"
-                  })
-      except json.JSONDecodeError:
-            return JsonResponse({"error": "Invalid JSON format"}, status=400)   
-
 @permission_required('Users')    
 def customers(request,*args,**kwargs):
    if 'Users' in kwargs.get('module') and kwargs.get('access'):
@@ -494,7 +454,7 @@ def customers(request,*args,**kwargs):
                                           assign =  "1" if post.get("assign" + r.name) else "",
                                           given_id = kwargs.get('authId')
                                        )
-                              elif r.role.filter(role_id=post[r.name],user_id=kwargs.get('authId'),assign="1").exists():
+                              elif r.role.filter(role_id=post[r.name],user_id=kwargs.get('authId'),assign="1").exclude(given_id=post['customer']).exists():
                                     if r.role.filter(role_id=post[r.name],user_id=post['customer']).exists():
                                        robj = r.role.filter(role_id=post[r.name],user_id=post['customer']).first()
                                        if "assign"+r.name in post:
@@ -506,11 +466,16 @@ def customers(request,*args,**kwargs):
                                     else:
                                        pass                                       
                         else:
-                              Roles.objects.filter(
-                              role_id=r.id,
-                              user_id=post.get('customer'),
-                              ).delete()        
-                                         
+                              if kwargs.get('isAdmin'):
+                                    Roles.objects.filter(
+                                    role_id=r.id,
+                                    user_id=post.get('customer'),
+                                    ).delete() 
+                              elif r.role.filter(role_id=post[r.name],user_id=kwargs.get('authId'),assign="1").exclude(given_id=post['customer']).exists():      
+                                    Roles.objects.filter(
+                                    role_id=r.id,
+                                    user_id=post.get('customer'),
+                                    ).delete()    
 
                   return JsonResponse({
                   "status":True,
@@ -525,6 +490,12 @@ def customers(request,*args,**kwargs):
       return render(request,"movieplanet/404.html")  
 
 
+@permission_required('Chat')   
+def chat(request,*args,**kwargs):
+    if 'Chat' in kwargs.get('module') and kwargs.get('access'):
+      return render(request,"movieplanet/admin/chat.html")
+    else:
+      return render(request,"movieplanet/404.html")  
     
  
 @xhr_request_only()
@@ -535,6 +506,9 @@ def sidebarList(request,*args,**kwargs):
       "success": True,
       "data":sidebarList
    }, status=200)   
+
+
+
 
 
 
@@ -735,9 +709,50 @@ def menuLoop(Menus=[],MenuId=None,IsLoop=None):
 
 
 
-
-
 """
+
+
+def excelPost(request,*args,**kwargs):
+      try:
+            if request.FILES["excel_file"]:
+                  excel_file = request.FILES["excel_file"]
+                  wb = openpyxl.load_workbook(excel_file)
+                  # sheets = wb.sheetnames
+                  worksheet = wb["Posts"]
+                  # active_sheet = wb.active
+                  excel_data = list()
+                  for i, row in enumerate(worksheet.iter_rows()):
+                        if i == 0:
+                           continue 
+                        row_data = list()
+                        for cell in row:
+                              row_data.append(str(cell.value))
+                        excel_data.append(row_data)
+                  posts = []
+                  for row in excel_data:
+                        posts.append(Posts(
+                              name=row[0],
+                              rate=int(row[1]),
+                              size=int(row[2]),
+                              lang=row[3],
+                              image=row[4],
+                              genre=row[5],
+                              link=row[6],
+                              starcast=row[7],
+                              type=int(row[8]),
+                              status=int(row[9]),
+                              # release_date=datetime.strptime(raw_date, "%d-%m-%Y %H:%M:%S"),
+                              story=row[11]
+                        ))           
+                  Posts.objects.bulk_create(posts)
+                  return JsonResponse({
+                  "status":True,
+                  "message":"Inserted success"
+                  })
+      except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON format"}, status=400)   
+
+
 def menu(request,*args,**kwargs):
     parentId = kwargs.get('parentId', '')
     if request.method == 'POST':

@@ -32,14 +32,17 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'channels',
     'backend',
     'movieplanet'
+    
 ]
 
 MIDDLEWARE = [
@@ -54,7 +57,7 @@ MIDDLEWARE = [
     # 'movieplanet.middleware.AuthMiddlewere',
     # 'backend.middleware.DashboardMiddlewere'
 ]
-
+ASGI_APPLICATION = 'base.asgi.application'
 ROOT_URLCONF = 'base.urls'
 
 TEMPLATES = [
@@ -91,6 +94,11 @@ DATABASES = {
     'movieplanet': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'movieplanet/db.sqlite3'),
+    }
+}
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
     }
 }
 
