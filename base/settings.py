@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     'channels',
     'backend',
     'movieplanet',
-    'websocket'
+    'websocket',
+    'school'
     
 ]
 

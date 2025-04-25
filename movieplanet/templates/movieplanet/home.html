@@ -2,22 +2,31 @@
 
 
 {% block content %}
+
    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.css" />
    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
-
+   <link href="https://cdn.jsdelivr.net/npm/nouislider@15.6.0/dist/nouislider.min.css" rel="stylesheet">
    <!-- <link rel="stylesheet" href="https://cdn.datatables.net/2.2.2/css/dataTables.dataTables.css" />
    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.2/css/buttons.dataTables.css" /> -->
    <style>
     .card-block {
-    font-size: 1em;
-    position: relative;
-    margin: 0;
-    padding: 1em;
-    border: none;
-    border-top: 1px solid rgba(34, 36, 38, .1);
-    box-shadow: none;
-     
-}
+        font-size: 1em;
+        position: relative;
+        margin: 0;
+        padding: 1em;
+        border: none;
+        border-top: 1px solid rgba(34, 36, 38, .1);
+        box-shadow: none;
+        
+    }
+    .dataTables_filter{
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+    }
+    .dataTables_filter > button{
+      height: 35px;
+    }
    </style>
     <div class="container-fluid">
        <div class="row">
@@ -79,17 +88,19 @@
     </div>
    
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/nouislider@15.6.0/dist/nouislider.min.js"></script>
+<!-- <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script> -->
 <!-- <script src="https://cdn.datatables.net/2.2.2/js/dataTables.js"></script>
 <script src="https://cdn.datatables.net/buttons/3.2.2/js/dataTables.buttons.js"></script>
 <script src="https://cdn.datatables.net/buttons/3.2.2/js/buttons.dataTables.js"></script> -->
 <script>
 
     $(document).ready( function () {
-      loadData()
+      loadData({year:'',genrs:'',rate:''})
+
+
     })
-    function loadData(){
+    function loadData(obj={}){
       var pgno = 0;
       $('table.display').DataTable({
             "processing" : true,
@@ -99,6 +110,9 @@
             "oSearch": {"sSearch": "{{request.GET.search}}" },
             "displayStart":("{{request.GET.page}}") ?(4*"{{request.GET.page}}")-4 : 0,
             "ordering": false,
+            "language": {
+                "search": ""  // This removes the "Search:" label
+            },
             createdRow:function(row, data, dataIndex){
               let url = baseUrl+"/detail/"+data.name.split(' ').join('+')
               if(data.type=="2"){
@@ -129,7 +143,7 @@
                     url: "{{ settings.BASE_URL }}",
                     method:"POST",
                     headers: {'X-CSRFToken': csrftoken},
-                    data:{start:pgno, length:4,search:search,type:'View'}
+                    data:{start:pgno, length:4,search:search,year:obj.year,genrs:obj.genrs,rate:obj.rate}
                 }).then ( function( json, textStatus, jqXHR ) {
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                     callback(json);
@@ -142,36 +156,115 @@
                 { data: "rate" },  
             ],
             initComplete: function () {
-                // Create the custom button
-                const customBtn = $(`
-                    <button class="btn btn-sm btn-info">
-                        Filter <i class="fa fa-filter me-1"></i> 
-                    </button>
-                `);
+                const customBtn = $(`<div>
+                  <button class="btn btn-info dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Filter <i class="fa fa-filter me-1"></i> 
+                  </button>
+                  <ul class="dropdown-menu" id="filter-menu">
+                    <li>
+                     <div class="dropdown-item">
+                      <label for="year">Year</label> 
+                      <div id="year-slider"></div>
+                     </div>
+                    </li>
 
-                // Append the button to the filter container
+                    <li>
+                     
+                     <div class="dropdown-item">
+                      <label for="genres">Genres</label> 
+                      <div>
+                        <input type="checkbox" value="Horror"/>
+                        <label>Horror</label>
+                      </div>
+                      <div>
+                        <input type="checkbox" value="Action"/>
+                        <label>Action</label>
+                      </div>
+                      <div>
+                        <input type="checkbox" value="Sci-fi"/>
+                        <label>Sci-fi</label>
+                      </div>
+                      
+                     </div>
+                     
+                    </li>
+
+                    <li>
+                     <div class="dropdown-item">
+                      <label for="rate">Rating</label> 
+                      <div id="rate-slider"></div>
+                     </div>
+                    </li>
+                    <li class="d-flex justify-content-center p-2">
+                      <button class="btn btn-sm btn-success w-100" id="filter-apply" type="button">
+                        Apply filter
+                      </button> 
+                    </li>
+                  </ul>
+                   
+                </div>`);
                 $('.dataTables_filter').prepend(customBtn);
 
-                // Button click action
-                $('#filterBtn').on('click', function () {
-                    alert('Custom filter clicked');
-                    // You can open a modal or apply custom logic here
+                $('#filter-apply').click(function(){
+                  $('table.display').DataTable().clear().destroy();
+                  loadData({year:'2024',genrs:'Horror',rate:5})
+                })
+
+                const $dropdown = $('#filter-menu');
+                $dropdown.on('click', function (e) {
+                    e.stopPropagation();
+                });
+                var currentYear = new Date().getFullYear();
+                var yearSlider = document.getElementById('year-slider');
+
+                noUiSlider.create(yearSlider, {
+                    start: [2000, currentYear],  // Initial values for both sides (start from 1950 to current year)
+                    connect: true,  // Makes the area between the two handles a connected range
+                    range: {
+                        'min': 1950,  // Minimum value is 1950
+                        'max': currentYear   // Maximum value is the current year
+                    },
+                    step: 1,  // Step size (change by 1 year each time)
+                    tooltips: true,  // Display tooltips on both handles
+                    format: {
+                        to: function (value) {
+                            return Math.round(value);  // Round the value to the nearest integer
+                        },
+                        from: function (value) {
+                            return value;
+                        }
+                    }
+                });
+
+                var rateSlider = document.getElementById('rate-slider');
+                noUiSlider.create(rateSlider, {
+                    start: [3, 8],  // Initial values for both sides (start from 1950 to current year)
+                    connect: true,  // Makes the area between the two handles a connected range
+                    range: {
+                        'min': 1,  // Minimum value is 1950
+                        'max': 10   // Maximum value is the current year
+                    },
+                    step: 1,  // Step size (change by 1 year each time)
+                    tooltips: true,  // Display tooltips on both handles
+                    format: {
+                        to: function (value) {
+                            return Math.round(value);  // Round the value to the nearest integer
+                        },
+                        from: function (value) {
+                            return value;
+                        }
+                    }
                 });
             }
-            // dom: 'Bfrtip', // B = buttons, f = filter, r = processing, t = table, i = info, p = pagination
-            // buttons: [
-            //     {
-            //         text: 'Filter <i class="fa fa-filter me-1"></i>',
-            //         className: 'btn btn-primary',
-            //         action: function (e, dt, node, config) {
-            //             alert('Add customer clicked');
-            //         }
-            //     }
-            // ],
+
             
         });
         
     }
+
+
+
+
 
 
 

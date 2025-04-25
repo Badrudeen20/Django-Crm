@@ -6,6 +6,7 @@ urlpatterns = [
     # path('admin/', admin.site.urls),
     path('movieplanet/', include('movieplanet.urls')),
     path('admin/', include('backend.urls')),
+    path('school/', include('school.urls')),
 ]
 
 
