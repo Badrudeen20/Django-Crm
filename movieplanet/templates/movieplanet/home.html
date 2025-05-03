@@ -41,8 +41,8 @@
 
           <div class="col-md-12 col-sm-12 col-lg-4">
               <div class="container">
-                <div class="row">
-                  
+                <div class="row" id="trands">
+                  <!--  
                   {% for t in Trands %}
                     <div class="col-md-6 col-sm-12 col-lg-12">
                       <div class="card float-left my-2">
@@ -71,7 +71,7 @@
                       </div>
                     </div>
                   {% endfor %}
-                 
+                  -->
 
              
                 </div>
@@ -96,12 +96,47 @@
 <script>
 
     $(document).ready( function () {
-      loadData({year:'',genrs:'',rate:''})
+      
+      loadData()
+      let trands = ''
+      let url = baseUrl+"/detail/"
+      {% for t in Trands %}
 
+      trands+=`<div class="col-md-6 col-sm-12 col-lg-12">
+                <div class="card float-left my-2">
+                  <div class="row ">`
+
+              {% if forloop.counter|divisibleby:2 %}
+              trands+=`<div class="col-7 ">
+                        <div class="card-block">                          
+                          <a class="card-text" href="${url+"{{t.post.name}}".split(' ').join('+')}">{{t.post.name}}</a>
+                        </div>
+                      </div>
+                      <div class="col-5">
+                        <img class="d-block w-100" src="{{t.post.image}}" alt="">
+                      </div>`
+              {% else %}
+              trands+=`<div class="col-5">
+                        <img class="d-block w-100" src="{{t.post.image}}" alt="">
+                      </div>
+                      <div class="col-7">
+                        <div class="card-block">
+                          <a class="card-text" href="${url+"{{t.post.name}}".split(' ').join('+')}">{{t.post.name}}</a>
+                        </div>
+                      </div>`
+              {% endif %}     
+            trands+=`</div>
+                  </div>
+                </div>`
+      {% endfor %}
+      $('#trands').html(trands)
 
     })
-    function loadData(obj={}){
+    function loadData(){
       var pgno = 0;
+      const years = "{{request.GET.years}}"
+      const rates = "{{request.GET.rates}}"
+      const genres = "{{request.GET.genres}}"
       $('table.display').DataTable({
             "processing" : true,
 		        "serverSide" : true,
@@ -133,17 +168,28 @@
                 var pageInfo = api.page.info();
                 pgno =  pageInfo.page+1;
                 let param = '?page='+pgno
-                
+
+
+
                 if(search){
                   param +='&search='+search
                 }
+                if(years){
+                  param +='&years='+years
+                }
+                if(rates){
+                  param +='&rates='+rates
+                }
+                if(genres){
+                  param +='&genres='+genres
+                }
                 window.history.replaceState(null, null, param);
-                
+                // years:obj.years,genres:obj.genres,rates:obj.rates
                 $.ajax({
                     url: "{{ settings.BASE_URL }}",
                     method:"POST",
                     headers: {'X-CSRFToken': csrftoken},
-                    data:{start:pgno, length:4,search:search,year:obj.year,genrs:obj.genrs,rate:obj.rate}
+                    data:{start:pgno, length:4,search:search}
                 }).then ( function( json, textStatus, jqXHR ) {
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                     callback(json);
@@ -156,69 +202,62 @@
                 { data: "rate" },  
             ],
             initComplete: function () {
-                const customBtn = $(`<div>
-                  <button class="btn btn-info dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    Filter <i class="fa fa-filter me-1"></i> 
-                  </button>
-                  <ul class="dropdown-menu" id="filter-menu">
-                    <li>
-                     <div class="dropdown-item">
-                      <label for="year">Year</label> 
-                      <div id="year-slider"></div>
-                     </div>
-                    </li>
-
-                    <li>
-                     
-                     <div class="dropdown-item">
-                      <label for="genres">Genres</label> 
-                      <div>
-                        <input type="checkbox" value="Horror"/>
-                        <label>Horror</label>
-                      </div>
-                      <div>
-                        <input type="checkbox" value="Action"/>
-                        <label>Action</label>
-                      </div>
-                      <div>
-                        <input type="checkbox" value="Sci-fi"/>
-                        <label>Sci-fi</label>
-                      </div>
-                      
-                     </div>
-                     
-                    </li>
-
-                    <li>
-                     <div class="dropdown-item">
-                      <label for="rate">Rating</label> 
-                      <div id="rate-slider"></div>
-                     </div>
-                    </li>
-                    <li class="d-flex justify-content-center p-2">
-                      <button class="btn btn-sm btn-success w-100" id="filter-apply" type="button">
-                        Apply filter
-                      </button> 
-                    </li>
-                  </ul>
-                   
-                </div>`);
-                $('.dataTables_filter').prepend(customBtn);
-
-                $('#filter-apply').click(function(){
-                  $('table.display').DataTable().clear().destroy();
-                  loadData({year:'2024',genrs:'Horror',rate:5})
+                let genre = (genres) ? genres.split(',').map(item => item.trim()) : []
+                
+                let customBtn = `<div>
+                                      <button class="btn btn-info dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Filter <i class="fa fa-filter me-1"></i> 
+                                      </button>
+                                      <ul class="dropdown-menu" id="filter-menu">
+                                        <li>
+                                        <div class="dropdown-item">
+                                          <label for="year">Year</label> 
+                                          <div id="year-slider"></div>
+                                        </div>
+                                        </li>
+                                        <li>
+                                          <div class="dropdown-item">
+                                            <label for="genres">Genres</label> 
+                                        `
+                let genreList = ['Horror','Action','Sci-fi'];
+                genreList.forEach(function(item){
+                    
+                    customBtn+=`<div>
+                                  <input type="checkbox" name="genres[]" ${(genre.includes(item)) ? 'checked' : ''} value="${item}"/>
+                                  <label>${item}</label>
+                                </div>`
                 })
+
+                customBtn+=`
+                           </div>   
+                          </li>
+                          <li>
+                            <div class="dropdown-item">
+                              <label for="rate">Rating</label> 
+                              <div id="rate-slider"></div>
+                            </div>
+                            </li>
+                            <li class="d-flex justify-content-center p-2">
+                              <button class="btn btn-sm btn-success w-100" id="filter-apply" type="button">
+                                Apply filter
+                              </button> 
+                            </li>
+                          </ul>
+                          
+                        </div>`;
+                $('.dataTables_filter').prepend(customBtn);
 
                 const $dropdown = $('#filter-menu');
                 $dropdown.on('click', function (e) {
                     e.stopPropagation();
                 });
+                
+                
                 var currentYear = new Date().getFullYear();
                 var yearSlider = document.getElementById('year-slider');
-
+                let yearVal = (years) ? years.split(',').map(Number) : [2000,currentYear]
                 noUiSlider.create(yearSlider, {
-                    start: [2000, currentYear],  // Initial values for both sides (start from 1950 to current year)
+                    start: yearVal,  // Initial values for both sides (start from 1950 to current year)
                     connect: true,  // Makes the area between the two handles a connected range
                     range: {
                         'min': 1950,  // Minimum value is 1950
@@ -237,8 +276,9 @@
                 });
 
                 var rateSlider = document.getElementById('rate-slider');
+                let rateVal = (rates) ? rates.split(',').map(Number) : [3,8]
                 noUiSlider.create(rateSlider, {
-                    start: [3, 8],  // Initial values for both sides (start from 1950 to current year)
+                    start: rateVal,  // Initial values for both sides (start from 1950 to current year)
                     connect: true,  // Makes the area between the two handles a connected range
                     range: {
                         'min': 1,  // Minimum value is 1950
@@ -255,12 +295,26 @@
                         }
                     }
                 });
+                
+                $('#filter-apply').click(function(){
+                  
+                  let genres = $('input[name="genres[]"]:checked').map(function () {
+                      return this.value;
+                  }).get();
+                 
+                  window.location.href = baseUrl+'?years='+yearSlider.noUiSlider.get()+'&rates='+rateSlider.noUiSlider.get()+'&genres='+genres
+                 
+                })
+
             }
 
             
         });
         
     }
+     
+
+
 
 
 

@@ -10,7 +10,7 @@ class Posts(models.Model):
     ]
     name = models.TextField()
     image = models.TextField()
-    rate = models.CharField(max_length=100)
+    rate = models.DecimalField(max_digits=5, decimal_places=2)
     size = models.CharField(max_length=100)
     lang = models.TextField()
     genre = models.TextField()
@@ -38,8 +38,6 @@ class Menu(models.Model):
     status = models.CharField(max_length=100)
 
 
-
-
     
 class Module(models.Model):
     module = models.CharField(max_length=255)
@@ -65,6 +63,7 @@ class Customer(models.Model):
     profile = models.FileField(upload_to='profile_pictures/', blank=True, null=True)
     bio = models.TextField(blank=True, null=True)
     dob = models.DateField(blank=True, null=True)
+    email_verify = models.CharField(max_length=15, blank=True, null=True)
     is_admin = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(auto_now_add=True)
@@ -112,3 +111,25 @@ class Permission(models.Model):
 
     def __str__(self):
         return self.permission
+    
+class Comments(models.Model):
+    name =  models.CharField(max_length=100,null=True)
+    msg = models.TextField(blank=True, null=True)
+    post = models.ForeignKey(Posts, on_delete=models.CASCADE,related_name='post')
+    email =  models.EmailField(max_length=100)
+    parentId = models.CharField(max_length=100,null=True)
+    status = models.CharField(max_length=100,default='0')
+    created = models.DateField(auto_now_add=True)
+
+
+
+"""
+class Comments(models.Model):
+    name =  models.CharField(max_length=100,null=True)
+    msg = models.TextField(blank=True, null=True)
+    post = models.ForeignKey(Posts, on_delete=models.CASCADE,related_name='post')
+    email =  models.ForeignKey(Customer, on_delete=models.CASCADE,related_name='user')
+    parentId = models.CharField(max_length=100,null=True)
+    status = models.CharField(max_length=100,default='0')
+    created = models.DateField(auto_now_add=True)
+"""

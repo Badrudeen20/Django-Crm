@@ -385,7 +385,6 @@ $(document).on('click','.dropdown-btn',function(e){
     const dropdown = document.querySelectorAll(".dropdown");
     
     dropdownElement.classList.toggle("active");
-    console.log($(dropdownElement),'f')
     dropdown.forEach((drop) => {
         if (drop.id !== dropdownIndex) {
           drop.classList.remove("active");

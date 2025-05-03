@@ -8,7 +8,8 @@ urlpatterns=[
   path('login',views.login,name='movieplanet-login'),
   path('signup',views.signup,name='movieplanet-signup'),
   path('menubar',views.menubar),
-  path('detail/<str:Link>',views.detail),
+  path('detail/<str:Link>/',views.detail,name='movieplanet-detail'),
+  path('detail/<str:Link>/<str:parentId>',views.detail),
   path('category/<path:params>/', views.category),
   path('<str:Link>',views.home),
  

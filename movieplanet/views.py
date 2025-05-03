@@ -7,6 +7,7 @@ from movieplanet.models import *
 from django.db.models import Q
 from django.contrib import messages 
 from django.conf import settings
+from decimal import Decimal
 import json
 from django.http import JsonResponse
 from django.core.serializers.json import DjangoJSONEncoder
@@ -364,6 +365,14 @@ def posts(request,*args,**kwargs):
     else:
       return render(request,"movieplanet/404.html")  
 
+@permission_required('Posts') 
+def post(request,*args,**kwargs):
+    if 'Posts' in kwargs.get('module') and kwargs.get('access') and 'Edit' in kwargs.get('permission'):
+        postId = kwargs.get('postId', None)
+        return render(request,"movieplanet/admin/postedit.html")
+    else:
+      return HttpResponseRedirect(reverse('movieplanet:posts'))    
+
 
 @permission_required('Users')    
 def customers(request,*args,**kwargs):
@@ -555,7 +564,7 @@ def signup(request):
         email = request.POST['email']
         name = request.POST['name']
         password = request.POST['password']
-        if Customer.objects.filter(email=email).exists():
+        if Customer.objects.using('movieplanet').filter(email=email).exists():
             messages.error(request, "Email already exists. Please log in or use another email.")
             return HttpResponseRedirect(reverse('movieplanet-signup'))
         customer = Customer(email=email, name=name,is_admin=0)
@@ -583,20 +592,38 @@ def home(request,*args,**kwargs):
       startIndex = (int(start)-1) * int(length)
       endIndex = startIndex + int(length)
       Link = kwargs.get('Link', None)
+
+      rates = request.GET.get('rates', '')
+      min_rate, max_rate = rates.split(',') if rates else (0, 10)
+
+      years = request.GET.get('years', '')
+      start_year, end_year = years.split(',') if years else (1900, datetime.now().year)
+      
+      genre = request.GET.get('genres', '')
+      genres = genre.split(',') if genre else []
+      # rates = request.POST.getlist('rates[]', [])
+      # if len(rates) == 2:
+      #    min_rate, max_rate = rates
+      # else:
+      #    min_rate, max_rate = 0, 10
+      # print(request.GET)
+      query = Q()
+      for word in genres:
+          query |= Q(genre__icontains=word)
+      
       if Link:
             linkList = Link.split("+")
             Link = " ".join(linkList)
             parent = Posts.objects.filter(name=Link,status=1).first()
             Link = parent.id
-     
-      if search :
-            data = Posts.objects.filter(Q(parent=Link),name__icontains=search,status=1)[startIndex:endIndex].all()
-            totalLen = Posts.objects.filter(Q(parent=Link),name__icontains=search,status=1).count()
+      if search:
+            data = Posts.objects.filter(query,Q(parent=Link),Q(release_date__year__gte=start_year),Q(release_date__year__lte=end_year),rate__range=(min_rate, max_rate),name__icontains=search,status=1)[startIndex:endIndex]
+            totalLen = Posts.objects.filter(query,Q(parent=Link),Q(release_date__year__gte=start_year),Q(release_date__year__lte=end_year),rate__range=(min_rate, max_rate),name__icontains=search,status=1).count()
       
       else:
-            data = Posts.objects.filter(Q(parent=Link),status=1)[startIndex:endIndex].all()
-            totalLen = Posts.objects.filter(Q(parent=Link),status=1).count()
-      
+            data = Posts.objects.filter(query,Q(parent=Link),Q(release_date__year__gte=start_year),Q(release_date__year__lte=end_year),rate__range=(min_rate, max_rate),status=1)[startIndex:endIndex]
+            totalLen = Posts.objects.filter(query,Q(parent=Link),Q(release_date__year__gte=start_year),Q(release_date__year__lte=end_year),rate__range=(min_rate, max_rate),status=1).count()
+
       listData = []
       for i in data:
             post = {
@@ -615,7 +642,8 @@ def home(request,*args,**kwargs):
       "aaData":listData
       }, status=200)
     else:
-      return render(request,"movieplanet/home.html")
+      trands=Trand.objects.filter(status=1)[0:5]
+      return render(request,"movieplanet/home.html",{"Trands":trands})
 
 
 
@@ -662,17 +690,103 @@ def category(request,*args,**kwargs):
       return render(request,"movieplanet/home.html")
 
 
+def detail(request,Link=None,parentId=None):
+    linkList = Link.split("+")
+    MovieName = " ".join(linkList)
+   
+    data = Posts.objects.filter(name=MovieName,status=1).values().first()
+    if request.method == 'POST':
+       
+       Comments.objects.using('movieplanet').create(
+         name=request.POST['name'],
+         msg=request.POST['msg'],
+         parentId=parentId,
+         post_id=data['id'],
+         email=request.POST['email']
+       )
+       
+       return JsonResponse({
+       "success": True
+       }, status=200)
+    elif request.method == 'PUT':
+      comments = Comments.objects.using('movieplanet').filter(Q(parentId=parentId),post=data['id']).values()[0:8]
+      isComment = False
+      html = ''
+      if parentId:
+         html +='<ul class="list-group my-2 ml-4 comment">'  
+      for c in comments:
+            isComment = True
+            if parentId:
+                  html += f"""
+                  <li class="list-group-item mb-2">
+                        <div class="content">
+                          <strong>{c['name']}</strong>
+                          <p>{c['msg']}</p>
+                          <button class="btn btn-sm btn-danger" onclick="onReplay({c['id']})">Replay</button>
+                          <button class="btn btn-sm btn-dark" onclick="loadData({c['id']})">More</button>
 
-def detail(request,Link=None):
-      linkList = Link.split("+")
-      MovieName = " ".join(linkList)
-      data = Posts.objects.filter(name=MovieName,status=1).values().first()
+                        </div>
+                        <div method="post" class="mt-1 replay" style="display:none;" id="replay-{c['id']}">
+                           <div class="csrf"></div>
+                           <textarea class="form-control" name="replay" id=""></textarea>
+                           <div class="d-flex">
+                              <div class="form-group w-50">
+                                    <label for="username" class="form-label">Name</label>
+                                    <input type="text" class="form-control" name="username" /> 
+                              </div>
+                              <div class="form-group w-50">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" name="email" /> 
+                              </div>
+                           </div>
+                           <button class="btn btn-sm btn-success mt-1" onclick="sendComment({c['id']})">Replay</button>
+                        </div>
+                        <div id="li-{c['id']}"></div>
+                  </li>
+                  """
+            else:
+                  html += f"""
+                  <li class="list-group-item mb-2">
+                        <div class="content">
+                          <strong>{c['name']}</strong>
+                          <p>{c['msg']}</p>
+                          <button class="btn btn-sm btn-danger" onclick="onReplay({c['id']})">Replay</button>
+                          <button class="btn btn-sm btn-dark" onclick="loadData({c['id']})">More</button>
+                        </div>
+                        <div method="post" class="mt-1 replay" style="display:none;" id="replay-{c['id']}">
+                           <div class="csrf"></div>
+                           <textarea class="form-control" name="replay"></textarea>
+                           <div class="d-flex">
+                              <div class="form-group w-50">
+                                    <label for="username" class="form-label">Name</label>
+                                    <input type="text" class="form-control" name="username" /> 
+                              </div>
+                              <div class="form-group w-50">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" name="email" /> 
+                              </div>
+                           </div>
+                           <button class="btn btn-sm btn-success mt-1" onclick="sendComment({c['id']})">Replay</button>
+                        </div>
+                        <div id="li-{c['id']}"></div>
+                  </li>
+                  """
+      if parentId:
+         html +='</ul>'    
+      return JsonResponse({
+      "success": True,
+      "comment":html,
+      "parentId":parentId,
+      "isComment":isComment
+      }, status=200)
+    else:
+      trands=Trand.objects.filter(status=1)[0:5]
       context = {
          "link":Link,
-         "post":data
+         "post":data,
+         "Trands":trands
       }
       return render(request,"movieplanet/detail.html",context)
-
 
 
 def menubar(request,*args,**kwargs):
@@ -696,7 +810,6 @@ def menubar(request,*args,**kwargs):
             return JsonResponse({"status":True,"Menus":MenuHtml})
       except Exception as e:
             return JsonResponse({"status":False,"error": str(e)}, status=500)
-
 
 def menuLoop(Menus=[],MenuId=None,IsLoop=None):
    check = False

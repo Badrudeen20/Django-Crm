@@ -5,15 +5,23 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.css" />
    <style>
     .card-block {
-    font-size: 1em;
-    position: relative;
-    margin: 0;
-    padding: 1em;
-    border: none;
-    border-top: 1px solid rgba(34, 36, 38, .1);
-    box-shadow: none;
-     
-}
+        font-size: 1em;
+        position: relative;
+        margin: 0;
+        padding: 1em;
+        border: none;
+        border-top: 1px solid rgba(34, 36, 38, .1);
+        box-shadow: none;
+        
+    }
+    .comment  .list-group-item{
+      border: none;
+      padding: 0rem 0rem;
+    }
+    .comment  .list-group-item  .content{
+      border: 1px solid rgba(0, 0, 0, 0.125);
+      padding: 0.75rem 1.25rem;
+    }
    </style>
     <div class="container-fluid">
        <div class="row">
@@ -41,56 +49,70 @@
                   <a href="#" class="btn btn-info mx-2">Donload 780P</a>
                 </div>
             </div>
+           
+            <div class="my-3" method="post" id="replay-">
+              {% csrf_token %}
+              <label for="comment" class="form-label">Comment</label>
+              <textarea class="form-control" name="replay" rows="3"></textarea>
+              <div class="d-flex">
+                <div class="form-group w-50">
+                  <label for="username" class="form-label">Name</label>
+                  <input type="text" class="form-control" name="username" /> 
+                </div>
+                <div class="form-group w-50">
+                  <label for="email" class="form-label">Email</label>
+                  <input type="email" class="form-control" name="email" /> 
+                </div>
+              </div>
+              
+              <button class="btn btn-primary mt-1" onclick="sendComment()">Send</button>
+            </div>
+
+            <ul class="list-group comment" id="comments">
+             
+            </ul>
+           
           </div>
       
 
-          <div class="col-md-12 col-sm-12 col-lg-4">
-              <div class="container">
-                <div class="row">
+
+           <div class="col-md-12 col-sm-12 col-lg-4">
+            <div class="container">
+              <div class="row" id="trands">
+                <!-- 
+                {% for t in Trands %}
                   <div class="col-md-6 col-sm-12 col-lg-12">
                     <div class="card float-left my-2">
                       <div class="row ">
-                        <div class="col-7 ">
-                          <div class="card-block">
-                            
-                            <p>Wetgple text to build your own card.</p>
-                            
-                            <a href="#" class="btn btn-primary btn-sm">Read More</a>
-                          </div>
-                        </div>
-                  
-                        <div class="col-5">
-                          <img class="d-block w-100" src="https://picsum.photos/150?image=380" alt="">
-                        </div>
-                      </div>
-                    </div>
-                  </div>
 
-                  <div class="col-md-6 col-sm-12 col-lg-12">
-                    <div class="card float-right my-2">
-                      <div class="row ">
-                        <div class="col-5">
-                            <img class="d-block w-100" src="https://picsum.photos/150?image=641" alt="">
-                        </div>
-                        <div class="col-7">
-                          <div class="card-block">
-                            
-                            <p>Wetgple text to build your own card.</p>
-                            
-                            <a href="#" class="btn btn-primary btn-sm ">Read More</a>
-                          </div>
-                        </div> 
+                        {% if forloop.counter|divisibleby:2 %}
+                            <div class="col-7 ">
+                              <div class="card-block">                          
+                                <a class="card-text" href="#">{{t.post.name}}</a>
+                              </div>
+                            </div>
+                            <div class="col-5">
+                              <img class="d-block w-100" src="{{t.post.image}}" alt="">
+                            </div>
+                        {% else %}
+                            <div class="col-5">
+                              <img class="d-block w-100" src="{{t.post.image}}" alt="">
+                            </div>
+                            <div class="col-7">
+                              <div class="card-block">
+                                <a class="card-text" href="#">{{t.post.name}}</a>
+                              </div>
+                            </div> 
+                        {% endif %}     
                       </div>
                     </div>
                   </div>
-                </div>
-                 
-                
-                  
-                  
-              </div>
-                  
-          </div>
+                {% endfor %}
+                 -->
+              </div>   
+            </div>    
+           </div>
+
        </div>
         
  
@@ -98,7 +120,94 @@
    
 <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script> -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
+<script>
+  $(document).ready(function(){
+      loadData()
+      let trands = ''
+      let url = baseUrl+"/detail/"
+      {% for t in Trands %}
 
+      trands+=`<div class="col-md-6 col-sm-12 col-lg-12">
+                <div class="card float-left my-2">
+                  <div class="row ">`
+
+              {% if forloop.counter|divisibleby:2 %}
+              trands+=`<div class="col-7 ">
+                        <div class="card-block">                          
+                          <a class="card-text" href="${url+"{{t.post.name}}".split(' ').join('+')}">{{t.post.name}}</a>
+                        </div>
+                      </div>
+                      <div class="col-5">
+                        <img class="d-block w-100" src="{{t.post.image}}" alt="">
+                      </div>`
+              {% else %}
+              trands+=`<div class="col-5">
+                        <img class="d-block w-100" src="{{t.post.image}}" alt="">
+                      </div>
+                      <div class="col-7">
+                        <div class="card-block">
+                          <a class="card-text" href="${url+"{{t.post.name}}".split(' ').join('+')}">{{t.post.name}}</a>
+                        </div>
+                      </div>`
+              {% endif %}     
+            trands+=`</div>
+                  </div>
+                </div>`
+      {% endfor %}
+      $('#trands').html(trands)
+  })
+  function loadData(parentId=''){
+      let url = baseUrl+"/detail/{{ link }}"
+      console.log(url)
+      $.ajax({
+          url: url+"/"+parentId,
+          method:"PUT",
+          headers: {'X-CSRFToken': csrftoken},
+      }).then ( function( json, textStatus, jqXHR ) {
+          if(json.success && json.isComment){
+            if(json.parentId){
+              $('#li-'+parentId).html(json.comment)
+            }else{
+              $('#comments').html(json.comment)
+            }
+            
+          }
+          
+          
+      });
+  }
+  
+  function onReplay(parentId){
+    $('.replay').hide()
+    $('#replay-'+parentId).toggle()
+    $('#replay-'+parentId).find('.csrf').html('{% csrf_token %}')
+
+  }
+  function sendComment(commentId=''){
+    
+    let url = baseUrl+"/detail/{{ link }}/"+commentId
+      console.log(url)
+      let msg = $('#replay-'+commentId).find('textarea').val()
+      let username = $('#replay-'+commentId).find('input[name=username]').val()
+      let email = $('#replay-'+commentId).find('input[name=email]').val()
+      $.ajax({
+          url: url,
+          method:"POST",
+          headers: {'X-CSRFToken': csrftoken},
+          data:{msg:msg,name:username,email:email}
+      }).then ( function( json, textStatus, jqXHR ) {
+          if(json.success){
+            loadData(commentId)
+          }
+          $('#replay-'+commentId).find('textarea').val('')
+          $('#replay-'+commentId).find('input[name=username]').val('')
+          $('#replay-'+commentId).find('input[name=email]').val('')
+          
+          
+      });
+  }
+  
+</script>
 
 
 {% endblock %}
