@@ -13,7 +13,10 @@ from django.http import JsonResponse
 from django.core.serializers.json import DjangoJSONEncoder
 import os
 import openpyxl
+import random
+from django.core.mail import send_mail
 from datetime import datetime
+from movieplanet.tasks import send_welcome_email
 from movieplanet.decorators import (
    permission_required,xhr_request_only
 )
@@ -642,6 +645,17 @@ def home(request,*args,**kwargs):
       "aaData":listData
       }, status=200)
     else:
+      emails = [
+            "gumbayner20@gmail.com",
+            "badrudeendefz20@gmail.com",
+      ]
+      
+      for email in emails:
+            random_number = random.randint(10000, 99999)
+            send_welcome_email.delay(
+                  subject="Verify Email",
+                  message=f"Your verify code is {random_number}",
+                  recipient_email=email)
       trands=Trand.objects.filter(status=1)[0:5]
       return render(request,"movieplanet/home.html",{"Trands":trands})
 
@@ -835,6 +849,7 @@ def menuLoop(Menus=[],MenuId=None,IsLoop=None):
       return menu
    else:    
       return ''
+
 
 
 

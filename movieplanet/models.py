@@ -122,6 +122,13 @@ class Comments(models.Model):
     created = models.DateField(auto_now_add=True)
 
 
+class MailMessage(models.Model):
+    subject =  models.CharField(max_length=200,null=True)
+    to_address = models.EmailField(max_length=100)
+    from_address = models.EmailField(max_length=100)
+    content =  models.TextField(blank=True, null=True)
+
+
 
 """
 class Comments(models.Model):

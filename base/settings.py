@@ -40,12 +40,18 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'channels',
+    'celery',
+    'django_celery_results',
+    'django_celery_beat',
     'backend',
     'movieplanet',
     'websocket',
-    'school'
+    'school',
+
     
 ]
+
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -55,7 +61,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'base.middleware.ConditionalMiddleware'
+    'base.middleware.ConditionalMiddleware',
+    
     # 'movieplanet.middleware.AuthMiddlewere',
     # 'backend.middleware.DashboardMiddlewere'
 ]
@@ -104,6 +111,10 @@ CHANNEL_LAYERS = {
     }
 }
 
+CELERY_BROKER_URL = 'sqla+sqlite:///movieplanet/celerydb.sqlite' 
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -136,6 +147,13 @@ USE_I18N = True
 USE_TZ = True
 
 
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_USE_TLS = True
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'badruddinansary20@gmail.com'
+EMAIL_HOST_PASSWORD = 'alex tzfr rbjw cnbh'
+EMAIL_USE_TLS = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 

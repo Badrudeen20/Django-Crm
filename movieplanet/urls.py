@@ -12,6 +12,7 @@ urlpatterns=[
   path('detail/<str:Link>/<str:parentId>',views.detail),
   path('category/<path:params>/', views.category),
   path('<str:Link>',views.home),
+  
  
   ##### Admin ########
   path('admin/dashboard',views.dashboard,name='dashboard'),
