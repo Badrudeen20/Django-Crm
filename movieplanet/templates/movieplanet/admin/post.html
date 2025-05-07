@@ -179,69 +179,69 @@
         });
     })
 
-    function openModal(data={}){
+    function openModal(){
         $('#modal-fields').html(`
-                <input type="hidden" class="form-control" name="post" id="post" value="${data.id ?? ''}">
+                
                 <div class="col-sm-6">
                     <div class="form-group">
                         <label for="name">Name</label>
-                        <input type="text" class="form-control"  name="name" id="name" value="${data.name ?? ''}"  placeholder="Enter post">
+                        <input type="text" class="form-control"  name="name" id="name"   placeholder="Enter post">
                     </div>
                 </div>
                 <div class="col-sm-6">
                     <div class="form-group">
                         <label for="rate">Rate</label>
-                        <input type="text" name="rate" class="form-control" id="rate" value="${data.rate ?? ''}"  placeholder="Enter rate">
+                        <input type="text" name="rate" class="form-control" id="rate"   placeholder="Enter rate">
                     </div>
                 </div>
                 <div class="col-sm-6">
                     <div class="form-group">
                         <label for="size">Size</label>
-                        <input type="text" class="form-control" id="size" name="size"  value="${data.size ?? ''}" placeholder="Enter size">
+                        <input type="text" class="form-control" id="size" name="size"   placeholder="Enter size">
                     </div>
                 </div>
                 <div class="col-sm-6">
                     <div class="form-group">
                         <label for="lang">Language</label>
-                        <input type="text" class="form-control" name="lang" id="lang"  value="${data.lang ?? ''}" placeholder="Enter language">
+                        <input type="text" class="form-control" name="lang" id="lang"  placeholder="Enter language">
                     </div>
                 </div>
                 <div class="col-sm-6">
                     <div class="form-group">
                         <label for="image">Image</label>
-                        <input type="text" class="form-control" name="image" id="image" value="${data.image ?? ''}"  placeholder="Enter image">
+                        <input type="text" class="form-control" name="image" id="image"   placeholder="Enter image">
                     </div>
                 </div>
                 <div class="col-sm-6">
                     <div class="form-group">
                         <label for="genre">Genre</label>
-                        <input type="text" class="form-control" name="genre" id="genre" value="${data.genre ?? ''}"  placeholder="Enter genre">
+                        <input type="text" class="form-control" name="genre" id="genre"  placeholder="Enter genre">
                     </div>
                 </div>
                 <div class="col-sm-6">
                     <div class="form-group">
                         <label for="link">Link</label>
-                        <input type="text" class="form-control" name="link" id="link" value="${data.link ?? ''}"  placeholder="Enter link">
+                        <input type="text" class="form-control" name="link" id="link"  placeholder="Enter link">
                     </div>
                 </div>
                 <div class="col-sm-6">
                     <div class="form-group">
                         <label for="starcast">Star Cast</label>
-                        <input type="text" class="form-control" name="starcast" id="starcast" value="${data.starcast ?? ''}"  placeholder="Enter star cast">
+                        <input type="text" class="form-control" name="starcast" id="starcast"   placeholder="Enter star cast">
                     </div>
                 </div>
                 <div class="col-sm-6">
                     <div class="form-group">
                         <label for="genre">Type</label>
                         <select class="form-control" name="type">
-                            <option value="1" ${data.type=='1' ? 'selected' : ''} >File</option>
-                            <option value="2" ${data.type=='2' ? 'selected' : ''}>Folder</option>
+                            <option value="1"  >File</option>
+                            <option value="2" >Folder</option>
                         </select>
                     </div>
                 </div>
                 <div class="col-sm-6">
                     <div class="form-group d-flex mt-4">
-                        <input  class="form-check" type="checkbox" name="status" ${data.status ?'checked' :''}  value="1" />
+                        <input  class="form-check" type="checkbox" name="status"  value="1" />
                         <label for="genre">Active</label>
                         
                     </div>
@@ -249,19 +249,19 @@
                 <div class="col-sm-6">
                     <div class="form-group">
                         <label for="release_date">Release Date</label>
-                        <input  class="form-control" type="date" value="${data.release_date ?? ''}"  name="release_date" />   
+                        <input  class="form-control" type="date"   name="release_date" />   
                     </div>
                 </div> 
                 <div class="col-sm-6">
                     <div class="form-group">
                         <label for="menu">Menu Search</label>
-                        <input type="text" name="menu" value="${data.menu ?? ''}" class="form-control" />
+                        <input type="text" name="menu"  class="form-control" />
                     </div>
                 </div> 
                 <div class="col-sm-12">
                     <div class="form-group">
                        <label for="story">Story</label>
-                       <textarea class="form-control" value="${data.story ?? ''}" name="story" id="story">{{post.story}}</textarea>
+                       <textarea class="form-control"  name="story" id="story">{{post.story}}</textarea>
                     </div>
                 </div>
                 `)

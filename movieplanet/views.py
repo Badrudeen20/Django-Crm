@@ -153,8 +153,6 @@ def checkParent(role,module,mid):
       return allow
 
 
-
-
 @permission_required('Menu') 
 def menu(request,*args,**kwargs):
     if 'Menu' in kwargs.get('module') and kwargs.get('access'):
@@ -266,30 +264,14 @@ def posts(request,*args,**kwargs):
                   totalLen = Posts.objects.using('movieplanet').filter(Q(parent=parentId),name__icontains=search,status=1).count()
             
             else:
-                  data = Posts.objects.filter(Q(parent=parentId),status=1).all()[startIndex:endIndex]
-                  totalLen = Posts.objects.filter(Q(parent=parentId),status=1).count()
+                  data = Posts.objects.using('movieplanet').filter(Q(parent=parentId),status=1).all()[startIndex:endIndex]
+                  totalLen = Posts.objects.using('movieplanet').filter(Q(parent=parentId),status=1).count()
             
             listData = []
             for i in data:
                   btn =''
                   if 'Edit' in kwargs.get('permission'):
-                     obj = {
-                          "id":i.id,
-                          "name":i.name,
-                          "image":i.image,
-                          "rate":i.rate,
-                          "menu":i.menu if i.menu else '',
-                          "size":i.size,
-                          "lang":i.lang,
-                          "genre":i.genre,
-                          "story":i.story if i.story else '' ,
-                          "link":i.link if i.link else '' ,
-                          "starcast":i.starcast if i.starcast else '',
-                          "release_date":i.release_date if i.release_date else '',
-                          "type":i.type,
-                          "status":i.status
-                     }
-                     btn += f'<button class="btn btn-primary" onclick="openModal({obj})" >Edit</button>'
+                     btn += f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/post/{i.id}" >Edit</a>'
                   if 'Delete' in kwargs.get('permission'):
                      btn += f'<button class="btn btn-primary">Delete</button>'
                   
@@ -317,16 +299,18 @@ def posts(request,*args,**kwargs):
                   "action":action
             }, status=200)
       elif request.method == 'PUT' and 'Add' in kwargs.get('permission'):
+           pass
+           """"
             try:
                   body_unicode = request.body.decode('utf-8')
                   if not body_unicode:
                         return JsonResponse({"error": "Empty request body"}, status=400)
                   post = json.loads(body_unicode)
-                  if Posts.objects.filter(name=post['name']).exclude(id=post['post']).exists():
+                  if Posts.objects.using('movieplanet').filter(name=post['name']).exclude(id=post['post']).exists():
                        msg="Movie exist"
                   else:
                         if post['post']:
-                           update = Posts.objects.filter(id=post['post']).first()
+                           update = Posts.objects.using('movieplanet').filter(id=post['post']).first()
                            update.image = post.get('image', '')
                            update.rate = post.get('rate', '')
                            update.size = post.get('size', '')
@@ -363,16 +347,35 @@ def posts(request,*args,**kwargs):
             
             except json.JSONDecodeError:
                   return JsonResponse({"error": "Invalid JSON format"}, status=400)
+           """
       else:
             return render(request,"movieplanet/admin/post.html")
     else:
       return render(request,"movieplanet/404.html")  
 
+
 @permission_required('Posts') 
 def post(request,*args,**kwargs):
     if 'Posts' in kwargs.get('module') and kwargs.get('access') and 'Edit' in kwargs.get('permission'):
-        postId = kwargs.get('postId', None)
-        return render(request,"movieplanet/admin/postedit.html")
+      postId = kwargs.get('postId', None)
+      if request.method == 'POST':
+            post = request.POST
+           
+            update = Posts.objects.using('movieplanet').filter(id=postId).first()
+            update.image = post.get('image', '')
+            update.rate = post.get('rate', '')
+            update.size = post.get('size', '')
+            update.genre = post.get('genre', '')
+            update.lang = post.get('lang', '')
+            update.status = post.get('status', '')
+            update.story = post.get('story', '')
+            update.link = post.get('link', '')
+            update.menu = post.get('menu', '')
+            update.release_date = post.get('release_date', '')
+            update.save()
+            msg="Updated success"
+      postEdit =Posts.objects.using('movieplanet').filter(id=postId).values().first()
+      return render(request,"movieplanet/admin/postedit.html",{"post":postEdit})
     else:
       return HttpResponseRedirect(reverse('movieplanet:posts'))    
 
@@ -492,14 +495,20 @@ def customers(request,*args,**kwargs):
                                        robj.given_id = kwargs.get('authId')
                                        robj.save()        
                                     else:
-                                       pass                                       
+                                       Roles.objects.create(
+                                          role_id=post[r.name],
+                                          user_id = post['customer'],
+                                          assign =  "1" if post.get("assign" + r.name) else "",
+                                          given_id = kwargs.get('authId')
+                                       )                                    
                         else:
                               if kwargs.get('isAdmin'):
                                     Roles.objects.filter(
                                     role_id=r.id,
                                     user_id=post.get('customer'),
                                     ).delete() 
-                              elif r.role.filter(role_id=post[r.name],user_id=kwargs.get('authId'),assign="1").exclude(given_id=post['customer']).exists():      
+                              elif r.role.filter(role_id=r.id,user_id=kwargs.get('authId'),assign="1").exclude(given_id=post['customer']).exists():      
+                                    
                                     Roles.objects.filter(
                                     role_id=r.id,
                                     user_id=post.get('customer'),
@@ -570,9 +579,15 @@ def signup(request):
         if Customer.objects.using('movieplanet').filter(email=email).exists():
             messages.error(request, "Email already exists. Please log in or use another email.")
             return HttpResponseRedirect(reverse('movieplanet-signup'))
+        random_number = random.randint(10000, 99999)
         customer = Customer(email=email, name=name,is_admin=0)
         customer.set_password(password)
+        customer.email_verify = random_number
         customer.save()
+        send_welcome_email.delay(
+        subject="Verify Email",
+        message=f"Your verify code is {random_number}",
+        recipient_email=email)
         return redirect('admin/dashboard')
         # return HttpResponseRedirect(reverse('admin/dashboard')) 
     else:
@@ -645,17 +660,7 @@ def home(request,*args,**kwargs):
       "aaData":listData
       }, status=200)
     else:
-      emails = [
-            "gumbayner20@gmail.com",
-            "badrudeendefz20@gmail.com",
-      ]
-      
-      for email in emails:
-            random_number = random.randint(10000, 99999)
-            send_welcome_email.delay(
-                  subject="Verify Email",
-                  message=f"Your verify code is {random_number}",
-                  recipient_email=email)
+
       trands=Trand.objects.filter(status=1)[0:5]
       return render(request,"movieplanet/home.html",{"Trands":trands})
 
@@ -710,18 +715,22 @@ def detail(request,Link=None,parentId=None):
    
     data = Posts.objects.filter(name=MovieName,status=1).values().first()
     if request.method == 'POST':
-       
-       Comments.objects.using('movieplanet').create(
-         name=request.POST['name'],
-         msg=request.POST['msg'],
-         parentId=parentId,
-         post_id=data['id'],
-         email=request.POST['email']
-       )
-       
-       return JsonResponse({
-       "success": True
-       }, status=200)
+      if request.session.get('customer'): 
+            Comments.objects.using('movieplanet').create(
+            name=request.POST['name'],
+            msg=request.POST['msg'],
+            parentId=parentId,
+            post_id=data['id'],
+            email=request.POST['email']
+            )
+            
+            return JsonResponse({
+            "success": True
+            }, status=200)
+      else:
+            return JsonResponse({
+            "success": False
+            }, status=404) 
     elif request.method == 'PUT':
       comments = Comments.objects.using('movieplanet').filter(Q(parentId=parentId),post=data['id']).values()[0:8]
       isComment = False
@@ -736,26 +745,34 @@ def detail(request,Link=None,parentId=None):
                         <div class="content">
                           <strong>{c['name']}</strong>
                           <p>{c['msg']}</p>
-                          <button class="btn btn-sm btn-danger" onclick="onReplay({c['id']})">Replay</button>
+                  """
+                  if request.session.get('customer'):
+                     html +=f"""<button class="btn btn-sm btn-danger" onclick="onReplay({c['id']})">Replay</button>"""
+                 
+                  html +=f"""
                           <button class="btn btn-sm btn-dark" onclick="loadData({c['id']})">More</button>
-
                         </div>
-                        <div method="post" class="mt-1 replay" style="display:none;" id="replay-{c['id']}">
-                           <div class="csrf"></div>
-                           <textarea class="form-control" name="replay" id=""></textarea>
-                           <div class="d-flex">
-                              <div class="form-group w-50">
-                                    <label for="username" class="form-label">Name</label>
-                                    <input type="text" class="form-control" name="username" /> 
+                        """
+                  if request.session.get('customer'):
+                        html +=f"""      
+                              <div method="post" class="mt-1 replay" style="display:none;" id="replay-{c['id']}">
+                              <div class="csrf"></div>
+                              <textarea class="form-control" name="replay" id=""></textarea>
+                              <div class="d-flex">
+                                    <div class="form-group w-50">
+                                          <label for="username" class="form-label">Name</label>
+                                          <input type="text" class="form-control" name="username" /> 
+                                    </div>
+                                    <div class="form-group w-50">
+                                          <label for="email" class="form-label">Email</label>
+                                          <input type="email" class="form-control" name="email" /> 
+                                    </div>
                               </div>
-                              <div class="form-group w-50">
-                                    <label for="email" class="form-label">Email</label>
-                                    <input type="email" class="form-control" name="email" /> 
+                              <button class="btn btn-sm btn-success mt-1" onclick="sendComment({c['id']})">Replay</button>
                               </div>
-                           </div>
-                           <button class="btn btn-sm btn-success mt-1" onclick="sendComment({c['id']})">Replay</button>
-                        </div>
-                        <div id="li-{c['id']}"></div>
+                        """
+                  html +=f"""      
+                       <div id="li-{c['id']}"></div>
                   </li>
                   """
             else:
@@ -764,25 +781,36 @@ def detail(request,Link=None,parentId=None):
                         <div class="content">
                           <strong>{c['name']}</strong>
                           <p>{c['msg']}</p>
-                          <button class="btn btn-sm btn-danger" onclick="onReplay({c['id']})">Replay</button>
+                  """
+                  if request.session.get('customer'):
+                        html +=f"""        
+                              <button class="btn btn-sm btn-danger" onclick="onReplay({c['id']})">Replay</button>
+                              """
+                    
+                  html +=f"""       
                           <button class="btn btn-sm btn-dark" onclick="loadData({c['id']})">More</button>
                         </div>
-                        <div method="post" class="mt-1 replay" style="display:none;" id="replay-{c['id']}">
-                           <div class="csrf"></div>
-                           <textarea class="form-control" name="replay"></textarea>
-                           <div class="d-flex">
-                              <div class="form-group w-50">
-                                    <label for="username" class="form-label">Name</label>
-                                    <input type="text" class="form-control" name="username" /> 
+                        """
+                  if request.session.get('customer'):
+                        html +=f"""  
+                              <div method="post" class="mt-1 replay" style="display:none;" id="replay-{c['id']}">
+                              <div class="csrf"></div>
+                              <textarea class="form-control" name="replay"></textarea>
+                              <div class="d-flex">
+                                    <div class="form-group w-50">
+                                          <label for="username" class="form-label">Name</label>
+                                          <input type="text" class="form-control" name="username" /> 
+                                    </div>
+                                    <div class="form-group w-50">
+                                          <label for="email" class="form-label">Email</label>
+                                          <input type="email" class="form-control" name="email" /> 
+                                    </div>
                               </div>
-                              <div class="form-group w-50">
-                                    <label for="email" class="form-label">Email</label>
-                                    <input type="email" class="form-control" name="email" /> 
+                              <button class="btn btn-sm btn-success mt-1" onclick="sendComment({c['id']})">Replay</button>
                               </div>
-                           </div>
-                           <button class="btn btn-sm btn-success mt-1" onclick="sendComment({c['id']})">Replay</button>
-                        </div>
-                        <div id="li-{c['id']}"></div>
+                        """      
+                  html +=f"""        
+                       <div id="li-{c['id']}"></div>
                   </li>
                   """
       if parentId:

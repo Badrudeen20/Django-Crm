@@ -1,0 +1,147 @@
+
+{% extends "movieplanet/layout/admin.html" %}
+
+
+{% block content %}
+<div class="container d-flex justify-content-center">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.css" />
+<style>
+    @media (min-width: 576px) {
+    .modal-dialog {
+        max-width: 700px; /* Change width as needed */
+    }
+}
+
+@media (min-width: 768px) {
+    .modal-dialog {
+        max-width: 800px;
+    }
+}
+
+@media (min-width: 992px) {
+    .modal-dialog {
+        max-width: 900px;
+    }
+}
+</style>
+
+
+<div class="container mt-2">
+
+    <form class="row" method="post">
+      {% csrf_token %}
+            <div class="col-sm-6">
+                  <div class="form-group">
+                      <label for="name">Name</label>
+                      <input type="text" class="form-control"  name="name" id="name" value="{{post.name}}"  placeholder="Enter post">
+                  </div>
+              </div>
+              <div class="col-sm-6">
+                  <div class="form-group">
+                      <label for="rate">Rate</label>
+                      <input type="text" name="rate" class="form-control" id="rate" value="{{post.rate}}"  placeholder="Enter rate">
+                  </div>
+              </div>
+              <div class="col-sm-6">
+                  <div class="form-group">
+                      <label for="size">Size</label>
+                      <input type="text" class="form-control" id="size" name="size"  value="{{post.size}}" placeholder="Enter size">
+                  </div>
+              </div>
+              <div class="col-sm-6">
+                  <div class="form-group">
+                      <label for="lang">Language</label>
+                      <input type="text" class="form-control" name="lang" id="lang"  value="{{post.lang}}" placeholder="Enter language">
+                  </div>
+              </div>
+              <div class="col-sm-6">
+                  <div class="form-group">
+                      <label for="image">Image</label>
+                      <input type="text" class="form-control" name="image" id="image" value="{{post.image}}"  placeholder="Enter image">
+                  </div>
+              </div>
+              <div class="col-sm-6">
+                  <div class="form-group">
+                      <label for="genre">Genre</label>
+                      <input type="text" class="form-control" name="genre" id="genre" value="{{post.genre}}"  placeholder="Enter genre">
+                  </div>
+              </div>
+              <div class="col-sm-6">
+                  <div class="form-group">
+                      <label for="link">Link</label>
+                      <input type="text" class="form-control" name="link" id="link" value="{{post.link}}"  placeholder="Enter link">
+                  </div>
+              </div>
+              <div class="col-sm-6">
+                  <div class="form-group">
+                      <label for="starcast">Star Cast</label>
+                      <input type="text" class="form-control" name="starcast" id="starcast" value="{{post.starcast}}"  placeholder="Enter star cast">
+                  </div>
+              </div>
+              <div class="col-sm-6">
+                  <div class="form-group">
+                      <label for="genre">Type</label>
+                      <select class="form-control" name="type">
+                        <option value="1" {% if post.type == 1 %}selected{% endif %}>File</option>
+                        <option value="2" {% if post.type == 2 %}selected{% endif %}>Folder</option>
+                    </select>
+                  </div>
+              </div>
+              <div class="col-sm-6">
+                  <div class="form-group d-flex mt-4">
+                      <input  class="form-check" type="checkbox" name="status" {% if post.status %}checked{% endif %}  value="1" />
+                      <label for="genre">Active</label>
+                      
+                  </div>
+              </div>
+              <div class="col-sm-6">
+                  <div class="form-group">
+                      <label for="release_date">Release Date</label>
+                      <input  class="form-control" type="date" value="{{ post.release_date|date:'Y-m-d' }}"  name="release_date" />   
+                  </div>
+              </div> 
+              <div class="col-sm-6">
+                  <div class="form-group">
+                      <label for="menu">Menu Search</label>
+                      <input type="text" name="menu" value="{{post.menu}}" class="form-control" />
+                  </div>
+              </div> 
+              <div class="col-sm-12">
+                  <div class="form-group">
+                     <label for="story">Story</label>
+                     <textarea class="form-control" value="" name="story" id="story">{{post.story}}</textarea>
+                  </div>
+              </div>
+              <div class="col-sm-12">
+                  <div class="form-group mt-2">
+                        <button class="btn btn-primary">Submit</button>
+                  </div>
+              </div>
+
+              
+     
+
+    </form>
+  
+</div>
+
+
+
+
+
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.js"></script>
+<script>
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    $(document).ready( function () {
+        
+    })
+
+
+
+</script>
+
+{% endblock %}

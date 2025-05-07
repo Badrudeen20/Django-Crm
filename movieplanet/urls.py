@@ -20,6 +20,7 @@ urlpatterns=[
   path('admin/website/menu/<int:parentId>',views.menu),
   path('admin/website/posts',views.posts,name="posts"),
   path('admin/website/posts/<str:parentId>',views.posts),
+  path('admin/website/post/<str:postId>',views.post),
   # path('admin/website/excelPost',views.excelPost,name="excelPost"),
   path('admin/sidebar',views.sidebarList,name="sidebar"),
   path('admin/administration/permission/',views.permission,name="movieplanet-permission"),

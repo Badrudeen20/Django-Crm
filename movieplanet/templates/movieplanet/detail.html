@@ -49,24 +49,21 @@
                   <a href="#" class="btn btn-info mx-2">Donload 780P</a>
                 </div>
             </div>
-           
-            <div class="my-3" method="post" id="replay-">
-              {% csrf_token %}
-              <label for="comment" class="form-label">Comment</label>
-              <textarea class="form-control" name="replay" rows="3"></textarea>
-              <div class="d-flex">
-                <div class="form-group w-50">
-                  <label for="username" class="form-label">Name</label>
-                  <input type="text" class="form-control" name="username" /> 
-                </div>
-                <div class="form-group w-50">
-                  <label for="email" class="form-label">Email</label>
-                  <input type="email" class="form-control" name="email" /> 
-                </div>
-              </div>
-              
-              <button class="btn btn-primary mt-1" onclick="sendComment()">Send</button>
-            </div>
+
+                  <div class="my-3" method="post" id="replay-">
+                    {% csrf_token %}
+                    <label for="comment" class="form-label">Comments</label>
+                    {% with request.session.customer as customer %}
+                      {% if customer %}
+                        <textarea class="form-control" name="replay" rows="3"></textarea>
+     
+                        <button class="btn btn-primary mt-1" onclick="sendComment()">Send</button>
+                      {% endif %}
+                    {% endwith %}
+                  
+                  </div>
+
+
 
             <ul class="list-group comment" id="comments">
              
