@@ -1,3 +1,5 @@
+# python --version 
+# python -m django --version
 # python manage.py migrate --database=default
 # DATABASE_ROUTERS = ['db_router.Movieplanet']
 # python manage.py makemigrations movieplanet
