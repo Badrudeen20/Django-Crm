@@ -389,37 +389,42 @@ def customers(request,*args,**kwargs):
             search = request.POST['search']
             startIndex = (int(start)-1) * int(length)
             endIndex = startIndex + int(length)
-
-            # print(kwargs.get('roleIds'))
             listData = []
             totalLen=0
             
-            excIds = list(Roles.objects.using('movieplanet').filter(user_id=kwargs.get('authId')).values_list('given_id',flat=True))
-            excIds.append(kwargs.get('authId'))
-            if search :
-                  data = Customer.objects.using('movieplanet').filter(is_admin="0",name__icontains=search).exclude(id__in=excIds)[startIndex:endIndex].all()
-                  totalLen = Customer.objects.using('movieplanet').filter(is_admin="0",name__icontains=search).exclude(id__in=excIds).count()
+            if search:
+                  data = Customer.objects.using('movieplanet').filter(is_admin="0",name__icontains=search)[startIndex:endIndex].all()
+                  totalLen = Customer.objects.using('movieplanet').filter(is_admin="0",name__icontains=search).count()
             else:
-                  data = Customer.objects.using('movieplanet').filter(is_admin="0").exclude(id__in=excIds)[startIndex:endIndex].prefetch_related('roles')
-                  totalLen = Customer.objects.using('movieplanet').filter(is_admin="0").exclude(id__in=excIds).count()
-            
-            
+                  data = Customer.objects.using('movieplanet').filter(is_admin="0")[startIndex:endIndex].all()
+                  totalLen = Customer.objects.using('movieplanet').filter(is_admin="0").count()
+           
             for i in data:
-                  
-                  if 'Edit' in kwargs.get('permission'):
+                  if kwargs.get('isAdmin'):
+                        roles = Role.objects.using('movieplanet').filter(id__in=kwargs.get('roleIds')).all()
                         rol=[]
-                        for r in i.roles.all():
-                              urol={
-                                    "user_id":r.user_id,
-                                    "role":r.role.name,
-                                    "assign":r.assign if r.assign else ''
-                              }
-                              rol.append(urol)
+                        for r in roles:
+                              if i.roles.filter(role_id=r.id,user_id=i.id).first():
+                                    role = i.roles.filter(role_id=r.id,user_id=i.id).first()
+                                    urol={
+                                          "user_id":i.id,
+                                          "role_id":r.id,
+                                          "role":r.name,
+                                          "assign":role.assign if role.assign else '',
+                                          "check":1
+                                    }
+                                    rol.append(urol)
+                              else:
+                                    urol={
+                                          "user_id":i.id,
+                                          "role_id":r.id,
+                                          "role":r.name,
+                                          "assign":'',
+                                          "check":0
+                                    }
+                                    rol.append(urol)
+                        
                         editbtn = f'<button class="btn btn-sm  btn-danger" onclick="openModal({rol},{i.id})" >Role</button>'
-                  else:
-                        editbtn = ''
-                  roles = list(i.roles.values_list('role_id',flat=True))
-                  if kwargs.get('roleIds') == roles or roles==[] or kwargs.get('isAdmin') or all(item in kwargs.get('roleIds') for item in roles):
                         obj = {
                               "id":i.id,
                               "name":i.name,
@@ -427,34 +432,54 @@ def customers(request,*args,**kwargs):
                               "action":editbtn
                         }  
                         listData.append(obj)
+                      
+                      
+                  elif 'Edit' in kwargs.get('permission'):     
+                        roles = Role.objects.using('movieplanet').filter(id__in=kwargs.get('roleIds')).all()
+                        rol=[]
+                        check = False
+                        for r in roles:
+                              if Roles.objects.using('movieplanet').filter(role_id=r.id,user_id=kwargs.get('authId'),assign=1).exists():
+                                    if i.roles.filter(role_id=r.id,user_id=i.id).filter(Q(given_id=kwargs.get('authId')) | Q(given_id=None)).exists():
+                                          role = i.roles.filter(role_id=r.id,user_id=i.id).filter(Q(given_id=kwargs.get('authId')) | Q(given_id=None)).first() 
+                                          urol={
+                                                "user_id":i.id,
+                                                "role_id":r.id,
+                                                "role":r.name,
+                                                "assign":role.assign if role.assign else '',
+                                                "check":1
+                                          }
+                                          rol.append(urol)
+                                          check = True
+                                        
 
-            role = Role.objects.using('movieplanet').filter(id__in=kwargs.get('roleIds')).prefetch_related('role')
-            
-            action = []
-            
-            for r in role:
-                if kwargs.get('isAdmin'): 
-                  obj = {
-                        "id":r.id,
-                        "role":r.name,
-                        "assign":True
-                  }
-                  action.append(obj)
-                elif r.role.filter(role_id__in=kwargs.get('roleIds'),user_id=kwargs.get('authId'),assign="1").exists():
-                     obj = {
-                        "id":r.id,
-                        "role":r.name,
-                        "assign":True
-                     }
-                     action.append(obj)
-                  
+                                    elif not i.roles.filter(role_id=r.id,user_id=i.id).filter(~Q(given_id=kwargs.get('authId')) | Q(given_id=None)).exists():
+                                          urol={
+                                                "user_id":i.id,
+                                                "role_id":r.id,
+                                                "role":r.name,
+                                                "assign":'',
+                                                "check":0
+                                          }
+                                          rol.append(urol)
+                                          check = True
+                        
+                        if check:
+                              editbtn = f'<button class="btn btn-sm  btn-danger" onclick="openModal({rol},{i.id})" >Role</button>'
+                              obj = {
+                                    "id":i.id,
+                                    "name":i.name,
+                                    "email":i.email,
+                                    "action":editbtn
+                              }  
+                              listData.append(obj)
+
 
             return JsonResponse({
                         "success": True,
                         "iTotalRecords":totalLen,
                         "iTotalDisplayRecords":totalLen,
-                        "aaData":listData,
-                        "action":action
+                        "aaData":listData
                   }, status=200)
       elif  request.method == 'PUT' and 'Edit' in kwargs.get('permission'):
             try:
@@ -462,43 +487,41 @@ def customers(request,*args,**kwargs):
                   if not body_unicode:
                         return JsonResponse({"error": "Empty request body"}, status=400)
                   post = json.loads(body_unicode)
-                  
-                  role = Role.objects.using('movieplanet').filter(id__in=kwargs.get('roleIds')).prefetch_related('role')
-                  
+                  # role = Role.objects.using('movieplanet').filter(id__in=kwargs.get('roleIds')).prefetch_related('role')
+                  role = Role.objects.using('movieplanet').filter(id__in=kwargs.get('roleIds')).all()
                   action = []
                   for r in role:
                         if r.name in post:
-                           
                               if kwargs.get('isAdmin'): 
                                     if r.role.filter(role_id=post[r.name],user_id=post['customer']).exists():
                                        robj = r.role.filter(role_id=post[r.name],user_id=post['customer']).first()
                                        if "assign"+r.name in post:
-                                          robj.assign = "1"
+                                          robj.assign = 1
                                        else:
-                                          robj.assign = ""
+                                          robj.assign = None
                                        robj.given_id = kwargs.get('authId')
                                        robj.save()        
                                     else:
                                        Roles.objects.create(
                                           role_id=post[r.name],
                                           user_id = post['customer'],
-                                          assign =  "1" if post.get("assign" + r.name) else "",
+                                          assign =  1 if post.get("assign" + r.name) else None,
                                           given_id = kwargs.get('authId')
                                        )
-                              elif r.role.filter(role_id=post[r.name],user_id=kwargs.get('authId'),assign="1").exclude(given_id=post['customer']).exists():
+                              elif r.role.filter(role_id=post[r.name],user_id=kwargs.get('authId'),assign=1).exclude(given_id=post['customer']).exists():
                                     if r.role.filter(role_id=post[r.name],user_id=post['customer']).exists():
                                        robj = r.role.filter(role_id=post[r.name],user_id=post['customer']).first()
                                        if "assign"+r.name in post:
-                                          robj.assign = "1"
+                                          robj.assign = 1
                                        else:
-                                          robj.assign = ""
+                                          robj.assign = None
                                        robj.given_id = kwargs.get('authId')
                                        robj.save()        
                                     else:
                                        Roles.objects.create(
                                           role_id=post[r.name],
                                           user_id = post['customer'],
-                                          assign =  "1" if post.get("assign" + r.name) else "",
+                                          assign =  1 if post.get("assign" + r.name) else None,
                                           given_id = kwargs.get('authId')
                                        )                                    
                         else:
@@ -507,12 +530,21 @@ def customers(request,*args,**kwargs):
                                     role_id=r.id,
                                     user_id=post.get('customer'),
                                     ).delete() 
+                                    Roles.objects.filter(
+                                    role_id=r.id,
+                                    given_id=post.get('customer'),
+                                    ).delete() 
                               elif r.role.filter(role_id=r.id,user_id=kwargs.get('authId'),assign="1").exclude(given_id=post['customer']).exists():      
-                                    
                                     Roles.objects.filter(
                                     role_id=r.id,
                                     user_id=post.get('customer'),
                                     ).delete()    
+                                    Roles.objects.filter(
+                                    role_id=r.id,
+                                    given_id=post.get('customer'),
+                                    ).delete() 
+                              
+
 
                   return JsonResponse({
                   "status":True,
@@ -580,14 +612,23 @@ def signup(request):
             messages.error(request, "Email already exists. Please log in or use another email.")
             return HttpResponseRedirect(reverse('movieplanet-signup'))
         random_number = random.randint(10000, 99999)
-        customer = Customer(email=email, name=name,is_admin=0)
-        customer.set_password(password)
-        customer.email_verify = random_number
-        customer.save()
-        send_welcome_email.delay(
-        subject="Verify Email",
-        message=f"Your verify code is {random_number}",
-        recipient_email=email)
+        try:
+            customer = Customer(email=email, name=name, is_admin=False)
+            customer.set_password(password)
+            customer.email_verify = random_number
+            customer.save()
+            Roles.objects.create(
+                  role_id=2,
+                  user_id=customer.id
+            )
+        except Exception as e:
+            messages.error(request, e)
+            return HttpResponseRedirect(reverse('movieplanet-signup'))
+
+      #   send_welcome_email.delay(
+      #   subject="Verify Email",
+      #   message=f"Your verify code is {random_number}",
+      #   recipient_email=email)
         return redirect('admin/dashboard')
         # return HttpResponseRedirect(reverse('admin/dashboard')) 
     else:
@@ -660,9 +701,9 @@ def home(request,*args,**kwargs):
       "aaData":listData
       }, status=200)
     else:
-
+      baseUrl = settings.BASE_URL
       trands=Trand.objects.filter(status=1)[0:5]
-      return render(request,"movieplanet/home.html",{"Trands":trands})
+      return render(request,"movieplanet/home.html",{"Trands":trands,"baseUrl":baseUrl})
 
 
 
@@ -712,16 +753,17 @@ def category(request,*args,**kwargs):
 def detail(request,Link=None,parentId=None):
     linkList = Link.split("+")
     MovieName = " ".join(linkList)
-   
+    
     data = Posts.objects.filter(name=MovieName,status=1).values().first()
     if request.method == 'POST':
       if request.session.get('customer'): 
+            auth = request.session.get('customer')
             Comments.objects.using('movieplanet').create(
-            name=request.POST['name'],
-            msg=request.POST['msg'],
-            parentId=parentId,
-            post_id=data['id'],
-            email=request.POST['email']
+                  user_id=auth['id'],
+                  msg=request.POST['msg'],
+                  parentId=parentId,
+                  post_id=data['id'],
+                  status=1
             )
             
             return JsonResponse({
@@ -732,85 +774,64 @@ def detail(request,Link=None,parentId=None):
             "success": False
             }, status=404) 
     elif request.method == 'PUT':
-      comments = Comments.objects.using('movieplanet').filter(Q(parentId=parentId),post=data['id']).values()[0:8]
+      comments = Comments.objects.using('movieplanet').filter(Q(parentId=parentId),post=data['id']).order_by('-id').all()[0:8]
       isComment = False
       html = ''
       if parentId:
          html +='<ul class="list-group my-2 ml-4 comment">'  
       for c in comments:
             isComment = True
+          
             if parentId:
                   html += f"""
                   <li class="list-group-item mb-2">
                         <div class="content">
-                          <strong>{c['name']}</strong>
-                          <p>{c['msg']}</p>
+                          <strong>{c.user.name}</strong>
+                          <p>{c.msg}</p>
                   """
                   if request.session.get('customer'):
-                     html +=f"""<button class="btn btn-sm btn-danger" onclick="onReplay({c['id']})">Replay</button>"""
+                     html +=f"""<button class="btn btn-sm btn-danger" onclick="onReplay({c.id})">Replay</button>"""
                  
                   html +=f"""
-                          <button class="btn btn-sm btn-dark" onclick="loadData({c['id']})">More</button>
+                          <button class="btn btn-sm btn-dark" onclick="loadData({c.id})">More</button>
                         </div>
                         """
                   if request.session.get('customer'):
                         html +=f"""      
-                              <div method="post" class="mt-1 replay" style="display:none;" id="replay-{c['id']}">
-                              <div class="csrf"></div>
-                              <textarea class="form-control" name="replay" id=""></textarea>
-                              <div class="d-flex">
-                                    <div class="form-group w-50">
-                                          <label for="username" class="form-label">Name</label>
-                                          <input type="text" class="form-control" name="username" /> 
-                                    </div>
-                                    <div class="form-group w-50">
-                                          <label for="email" class="form-label">Email</label>
-                                          <input type="email" class="form-control" name="email" /> 
-                                    </div>
-                              </div>
-                              <button class="btn btn-sm btn-success mt-1" onclick="sendComment({c['id']})">Replay</button>
+                              <div class="mt-1 replay" style="display:none;" id="replay-{c.id}">
+                                    <textarea class="form-control" name="replay"></textarea>
+                                    <button class="btn btn-sm btn-success mt-1" onclick="sendComment({c.id})">Replay</button>
                               </div>
                         """
                   html +=f"""      
-                       <div id="li-{c['id']}"></div>
+                       <div id="li-{c.id}"></div>
                   </li>
                   """
             else:
                   html += f"""
                   <li class="list-group-item mb-2">
                         <div class="content">
-                          <strong>{c['name']}</strong>
-                          <p>{c['msg']}</p>
+                          <strong>{c.user.name}</strong>
+                          <p>{c.msg}</p>
                   """
                   if request.session.get('customer'):
                         html +=f"""        
-                              <button class="btn btn-sm btn-danger" onclick="onReplay({c['id']})">Replay</button>
+                              <button class="btn btn-sm btn-danger" onclick="onReplay({c.id})">Replay</button>
                               """
                     
                   html +=f"""       
-                          <button class="btn btn-sm btn-dark" onclick="loadData({c['id']})">More</button>
+                          <button class="btn btn-sm btn-dark" onclick="loadData({c.id})">More</button>
                         </div>
                         """
                   if request.session.get('customer'):
                         html +=f"""  
-                              <div method="post" class="mt-1 replay" style="display:none;" id="replay-{c['id']}">
-                              <div class="csrf"></div>
-                              <textarea class="form-control" name="replay"></textarea>
-                              <div class="d-flex">
-                                    <div class="form-group w-50">
-                                          <label for="username" class="form-label">Name</label>
-                                          <input type="text" class="form-control" name="username" /> 
-                                    </div>
-                                    <div class="form-group w-50">
-                                          <label for="email" class="form-label">Email</label>
-                                          <input type="email" class="form-control" name="email" /> 
-                                    </div>
-                              </div>
-                              <button class="btn btn-sm btn-success mt-1" onclick="sendComment({c['id']})">Replay</button>
+                              <div class="mt-1 replay" style="display:none;" id="replay-{c.id}">
+                                    <textarea class="form-control" name="replay"></textarea>
+                                    <button class="btn btn-sm btn-success mt-1" onclick="sendComment({c.id})">Replay</button>
                               </div>
                         """      
                   html +=f"""        
-                       <div id="li-{c['id']}"></div>
+                       <div id="li-{c.id}"></div>
                   </li>
                   """
       if parentId:
@@ -822,9 +843,11 @@ def detail(request,Link=None,parentId=None):
       "isComment":isComment
       }, status=200)
     else:
+      baseUrl = settings.BASE_URL
       trands=Trand.objects.filter(status=1)[0:5]
       context = {
          "link":Link,
+         "baseUrl":baseUrl,
          "post":data,
          "Trands":trands
       }
@@ -879,10 +902,7 @@ def menuLoop(Menus=[],MenuId=None,IsLoop=None):
       return ''
 
 
-
-
 """
-
 
 def excelPost(request,*args,**kwargs):
       try:

@@ -100,9 +100,9 @@
                             <th scope="col">Assion</th>
                             </tr>
                         </thead>
-                        <tbody>`
+                        <tbody id="role-body">`
             
-            
+                        /*
                         json.action?.forEach((ele,idx)=>{
                             html +=`<tr>
                                     <th scope="row">${++idx}</th>
@@ -111,6 +111,7 @@
                                     <td><input type="checkbox" name="assign${ele.role}" value="1" class="form-check-input" /></td>
                                     </tr>`
                         })
+                        */
                         html +=`</tbody>
                         </table>`
                         $('#role-field').html(html)
@@ -129,7 +130,7 @@
          
         });
     }
-    
+    /*
     function openModal(role=[],userId){
         
         if(role.length){
@@ -146,10 +147,26 @@
            $('#RoleModal').modal('show')
         }
     }
+    */
+    function openModal(role=[],userId){
+        $(`input[name=customer]`).val(userId)
+        let html = ''
+        role?.forEach(function(ele,idx){
+            html+=`<tr>
+                    <th scope="row">${++idx}</th>
+                    <td>${ele.role}</td>
+                    <td><input type="checkbox" name="${ele.role}" value="${ele.role_id}" ${ele.check ? 'checked': ''} class="form-check-input" /></td>
+                    <td><input type="checkbox" name="assign${ele.role}" value="1" ${ele.assign ? 'checked': ''}  class="form-check-input" /></td>
+                </tr>`
+        })
+        $('#role-body').html(html)
+        $('#RoleModal').modal('show')
+    }
 
-    $('#RoleForm').submit(function(e){
+    $(document).on('submit', '#RoleForm', function(e) {
         e.preventDefault()
         const formData = Object.fromEntries($(this).serializeArray().map(x => [x.name, x.value]));
+        // formData.customer = 'customValue';
         $.ajax({
             url: '{{ settings.BASE_URL }}', // Replace with your server endpoint
             method: 'PUT',

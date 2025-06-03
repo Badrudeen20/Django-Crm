@@ -95,7 +95,7 @@ class Roles(models.Model):
     user =  models.ForeignKey(Customer, on_delete=models.CASCADE,related_name='roles')
     role = models.ForeignKey(Role, on_delete=models.CASCADE,related_name='role')
     assign = models.TextField(null=True, blank=True)
-    given = models.ForeignKey(Customer, on_delete=models.CASCADE,related_name='given',    null=True,blank=True,default=None)
+    given = models.ForeignKey(Customer, on_delete=models.CASCADE,related_name='given',null=True,blank=True,default=None)
     created_at = models.DateTimeField(auto_now_add=True)
 
 class Permission(models.Model):
@@ -113,10 +113,9 @@ class Permission(models.Model):
         return self.permission
     
 class Comments(models.Model):
-    name =  models.CharField(max_length=100,null=True)
+    user =  models.ForeignKey(Customer, on_delete=models.CASCADE,related_name='customer')
     msg = models.TextField(blank=True, null=True)
     post = models.ForeignKey(Posts, on_delete=models.CASCADE,related_name='post')
-    email =  models.EmailField(max_length=100)
     parentId = models.CharField(max_length=100,null=True)
     status = models.CharField(max_length=100,default='0')
     created = models.DateField(auto_now_add=True)

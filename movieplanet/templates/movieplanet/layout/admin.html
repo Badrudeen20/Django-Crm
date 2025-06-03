@@ -54,20 +54,25 @@
           url: "{% url 'movieplanet:sidebar' %}",
           headers: {'X-CSRFToken': csrfkey},
           success: function (response) {
-            
               let li = '';
               response.data.forEach(ele=>{
                   if(ele.moduleType==2 && ele.parent_id==''){
-                  li +=`<li class="mb-1">
-                          <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#module${ele.id}" aria-expanded="false">
-                            ${ele.module}
-                          </button>
-                          <div class="collapse" id="module${ele.id}">
-                            ${folderLoop(response,ele.id)}
-                            ${fileLoop(response,ele.id)}
-                          
-                          </div>
-                        </li>`
+                    li +=`<li class="mb-1">
+                            <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#module${ele.id}" aria-expanded="false">
+                              ${ele.module}
+                            </button>
+                            <div class="collapse" id="module${ele.id}">
+                              ${folderLoop(response,ele.id)}
+                              ${fileLoop(response,ele.id)}
+                            
+                            </div>
+                          </li>`
+                  }else if(ele.moduleType==1 && ele.parent_id==''){
+                    li +=`<li class="mb-1">
+                            <a  class="btn btn-toggle align-items-center rounded" href="{{ settings.BASE_URL }}/${ele.url}">
+                              ${ele.module}
+                            </a>
+                          </li>`
                   }                
               })
              
@@ -115,7 +120,6 @@
               
           },
           error: function (response) {
-              // alert the error if any error occured
               alert(response["responseJSON"]["error"]);
           }
       })

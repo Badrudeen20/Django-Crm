@@ -76,7 +76,7 @@
            <div class="col-md-12 col-sm-12 col-lg-4">
             <div class="container">
               <div class="row" id="trands">
-                <!-- 
+               
                 {% for t in Trands %}
                   <div class="col-md-6 col-sm-12 col-lg-12">
                     <div class="card float-left my-2">
@@ -85,7 +85,7 @@
                         {% if forloop.counter|divisibleby:2 %}
                             <div class="col-7 ">
                               <div class="card-block">                          
-                                <a class="card-text" href="#">{{t.post.name}}</a>
+                                <a class="card-text" href="{{baseUrl}}movieplanet/detail/{{t.post.name|urlencode }}" >{{t.post.name}}</a>
                               </div>
                             </div>
                             <div class="col-5">
@@ -97,7 +97,7 @@
                             </div>
                             <div class="col-7">
                               <div class="card-block">
-                                <a class="card-text" href="#">{{t.post.name}}</a>
+                                <a class="card-text" href="{{baseUrl}}movieplanet/detail/{{t.post.name|urlencode }}" >{{t.post.name}}</a>
                               </div>
                             </div> 
                         {% endif %}     
@@ -105,7 +105,7 @@
                     </div>
                   </div>
                 {% endfor %}
-                 -->
+                 
               </div>   
             </div>    
            </div>
@@ -120,11 +120,12 @@
 <script>
   $(document).ready(function(){
       loadData()
+      /*
       let trands = ''
       let url = baseUrl+"/detail/"
       {% for t in Trands %}
-
-      trands+=`<div class="col-md-6 col-sm-12 col-lg-12">
+      
+            trands+=`<div class="col-md-6 col-sm-12 col-lg-12">
                 <div class="card float-left my-2">
                   <div class="row ">`
 
@@ -151,11 +152,12 @@
                   </div>
                 </div>`
       {% endfor %}
+      
       $('#trands').html(trands)
+      */ 
   })
   function loadData(parentId=''){
       let url = baseUrl+"/detail/{{ link }}"
-      console.log(url)
       $.ajax({
           url: url+"/"+parentId,
           method:"PUT",
@@ -167,41 +169,31 @@
             }else{
               $('#comments').html(json.comment)
             }
-            
-          }
-          
-          
+            $('.replay').hide()
+          }  
       });
   }
   
   function onReplay(parentId){
     $('.replay').hide()
     $('#replay-'+parentId).toggle()
-    $('#replay-'+parentId).find('.csrf').html('{% csrf_token %}')
-
   }
+  
   function sendComment(commentId=''){
-    
-    let url = baseUrl+"/detail/{{ link }}/"+commentId
-      console.log(url)
       let msg = $('#replay-'+commentId).find('textarea').val()
-      let username = $('#replay-'+commentId).find('input[name=username]').val()
-      let email = $('#replay-'+commentId).find('input[name=email]').val()
-      $.ajax({
-          url: url,
-          method:"POST",
-          headers: {'X-CSRFToken': csrftoken},
-          data:{msg:msg,name:username,email:email}
-      }).then ( function( json, textStatus, jqXHR ) {
-          if(json.success){
-            loadData(commentId)
-          }
-          $('#replay-'+commentId).find('textarea').val('')
-          $('#replay-'+commentId).find('input[name=username]').val('')
-          $('#replay-'+commentId).find('input[name=email]').val('')
-          
-          
-      });
+      {% with request.session.customer as customer %}
+        {% if customer %}
+          $.ajax({
+              url: baseUrl+"/detail/{{ link }}/"+commentId,
+              method:"POST",
+              headers: {'X-CSRFToken': csrftoken},
+              data:{msg:msg}
+          }).then ( function( json, textStatus, jqXHR ) { 
+            loadData(commentId) 
+          });
+        {% endif %}
+      {% endwith %}
+
   }
   
 </script>
