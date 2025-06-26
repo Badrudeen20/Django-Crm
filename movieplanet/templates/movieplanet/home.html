@@ -1,5 +1,5 @@
 {% extends "movieplanet/layout/movie.html" %}
-
+{% load custom_tags %}
 
 {% block content %}
 
@@ -51,7 +51,7 @@
                           {% if forloop.counter|divisibleby:2 %}
                               <div class="col-7 ">
                                 <div class="card-block">                          
-                                  <a class="card-text" href="{{baseUrl}}{{t.post.name|urlencode}}">{{t.post.name}}</a>
+                                  <a class="card-text" href="{{baseUrl}}movieplanet/detail/{{t.post.name|plusify}}">{{t.post.name}}</a>
                                 </div>
                               </div>
                               <div class="col-5">
@@ -63,7 +63,7 @@
                               </div>
                               <div class="col-7">
                                 <div class="card-block">
-                                  <a class="card-text" href="{{baseUrl}}{{t.post.name|urlencode}}" >{{t.post.name}}</a>
+                                  <a class="card-text" href="{{baseUrl}}movieplanet/detail/{{t.post.name|plusify}}" >{{t.post.name}}</a>
                                 </div>
                               </div> 
                           {% endif %}     

@@ -1,5 +1,5 @@
 {% extends "movieplanet/layout/movie.html" %}
-
+{% load custom_tags %}
 
 {% block content %}
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.css" />
@@ -85,7 +85,7 @@
                         {% if forloop.counter|divisibleby:2 %}
                             <div class="col-7 ">
                               <div class="card-block">                          
-                                <a class="card-text" href="{{baseUrl}}movieplanet/detail/{{t.post.name|urlencode }}" >{{t.post.name}}</a>
+                                <a class="card-text" href="{{baseUrl}}movieplanet/detail/{{t.post.name|plusify }}" >{{t.post.name}}</a>
                               </div>
                             </div>
                             <div class="col-5">
@@ -97,7 +97,7 @@
                             </div>
                             <div class="col-7">
                               <div class="card-block">
-                                <a class="card-text" href="{{baseUrl}}movieplanet/detail/{{t.post.name|urlencode }}" >{{t.post.name}}</a>
+                                <a class="card-text" href="{{baseUrl}}movieplanet/detail/{{t.post.name|plusify }}" >{{t.post.name}}</a>
                               </div>
                             </div> 
                         {% endif %}     
@@ -180,16 +180,17 @@
   }
   
   function sendComment(commentId=''){
-      let msg = $('#replay-'+commentId).find('textarea').val()
+      
       {% with request.session.customer as customer %}
         {% if customer %}
+          let msg = $('#replay-'+commentId).find('textarea').val()
           $.ajax({
               url: baseUrl+"/detail/{{ link }}/"+commentId,
               method:"POST",
               headers: {'X-CSRFToken': csrftoken},
               data:{msg:msg}
           }).then ( function( json, textStatus, jqXHR ) { 
-            loadData(commentId) 
+             loadData(commentId) 
           });
         {% endif %}
       {% endwith %}

@@ -789,13 +789,13 @@ def detail(request,Link=None,parentId=None):
                           <strong>{c.user.name}</strong>
                           <p>{c.msg}</p>
                   """
-                  if request.session.get('customer'):
-                     html +=f"""<button class="btn btn-sm btn-danger" onclick="onReplay({c.id})">Replay</button>"""
+                  # if request.session.get('customer'):
+                  #    html +=f"""<button class="btn btn-sm btn-danger" onclick="onReplay({c.id})">Replay</button>"""
                  
-                  html +=f"""
-                          <button class="btn btn-sm btn-dark" onclick="loadData({c.id})">More</button>
-                        </div>
-                        """
+                  # html +=f"""
+                  #         <button class="btn btn-sm btn-dark" onclick="loadData({c.id})">More</button>
+                  #       </div>
+                  #       """
                   if request.session.get('customer'):
                         html +=f"""      
                               <div class="mt-1 replay" style="display:none;" id="replay-{c.id}">
