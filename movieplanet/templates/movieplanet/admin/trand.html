@@ -1,11 +1,10 @@
 
-{% extends "movieplanet/layout/base.html" %}
+{% extends "movieplanet/layout/admin.html" %}
 
 
-{% block start %}
+{% block content %}
 <div class="container d-flex justify-content-center">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.css" />
-
 
 
 <div class="container mt-2">
@@ -99,32 +98,7 @@
          
         });
     }
-   
-    function delModel(id){
-        $('#DelModel').modal('show');
-        $('[name="delid"]').val(id);
-    }
-    function changeStatus(id,status){
-     
-        $.ajax({
-            type: 'POST',
-            url: "{{ settings.BASE_URL }}/dashboard/movie/posts/"+id,
-            headers: {'X-CSRFToken': csrftoken},
-            data: {type:'Edit',status:status},
-            success: function (response) {
-                
-                if(response.Success){
-                    $('table.display').DataTable().clear().destroy();
-                    loadData()
-                }
-                
-            },
-            error: function (response) {
-                alert(response["responseJSON"]["error"]);
-            }
-        })
-       
-    }
+
 
 </script>
 

@@ -157,6 +157,60 @@ def checkParent(role,module,mid):
 def menu(request,*args,**kwargs):
     if 'Menu' in kwargs.get('module') and kwargs.get('access'):
       if request.method == 'POST' and 'View' in kwargs.get('permission'):
+            parentId = kwargs.get('parentId', None)
+            start = request.POST['start']
+            length = request.POST['length']
+            search = request.POST['search']
+            startIndex = (int(start)-1) * int(length)
+            endIndex = startIndex + int(length)
+            listData = []
+            if search :
+                  data = Menu.objects.using('movieplanet').filter(Q(menuId=parentId),name__icontains=search)[startIndex:endIndex]
+                  totalLen = Menu.objects.using('movieplanet').filter(Q(menuId=parentId),name__icontains=search).count()
+            else:
+                  data = Menu.objects.using('movieplanet').filter(Q(menuId=parentId))[startIndex:endIndex]
+                  totalLen = Menu.objects.using('movieplanet').filter(Q(menuId=parentId)).count()
+
+            action = {}
+
+            for i in data:
+                  if 'Edit' in kwargs.get('permission'):
+                      action['edit'] = f'<button class="btn btn-primary">Edit</button>' 
+            
+                  permission = {
+                  "id":i.id,
+                  "name":(f'<a href="{settings.BASE_URL}movieplanet/admin/website/menu/{i.id}">{i.name}</a>'),
+                  "action":action['edit']
+                  }
+                  listData.append(permission)
+ 
+            return JsonResponse({
+            "success": True,
+            "iTotalRecords":totalLen,
+            "iTotalDisplayRecords":totalLen,
+            "aaData":listData,
+            "action":action
+            }, status=200)
+      
+      else:
+            return render(request,"movieplanet/admin/menu.html")
+    else:
+      return render(request,"movieplanet/404.html")   
+
+def menuFind(menus, pid):
+    result = []
+    for m in menus:
+        if 'parentId' in m and m['parentId'] == pid:
+            result.append(m) 
+    return result
+
+
+
+"""
+@permission_required('Menu') 
+def menu(request,*args,**kwargs):
+    if 'Menu' in kwargs.get('module') and kwargs.get('access'):
+      if request.method == 'POST' and 'View' in kwargs.get('permission'):
             parentId = kwargs.get('parentId', '')
             start = request.POST['start']
             length = request.POST['length']
@@ -246,7 +300,7 @@ def menuFind(menus, pid):
         if 'parentId' in m and m['parentId'] == pid:
             result.append(m) 
     return result
-
+"""
 
 @permission_required('Posts') 
 def posts(request,*args,**kwargs):
@@ -379,6 +433,61 @@ def post(request,*args,**kwargs):
     else:
       return HttpResponseRedirect(reverse('movieplanet:posts'))    
 
+
+@permission_required('Trand') 
+def trand(request,*args,**kwargs):
+    if 'Trand' in kwargs.get('module') and kwargs.get('access'):
+      if request.method == 'POST' and 'View' in kwargs.get('permission'):
+            start = request.POST['start']
+            length = request.POST['length']
+            search = request.POST['search']
+            startIndex = (int(start)-1) * int(length)
+            endIndex = startIndex + int(length)
+            
+            if search :
+                  data = Trand.objects.using('movieplanet').select_related('post').filter(post__name__icontains=search,status=1)[startIndex:endIndex]
+                  totalLen = Trand.objects.using('movieplanet').select_related('post').filter(post__name__icontains=search,status=1).count()
+            
+            else:
+                  data = Trand.objects.using('movieplanet').select_related('post').filter(status=1)[startIndex:endIndex]
+                  totalLen = Trand.objects.using('movieplanet').select_related('post').filter(status=1).count()
+            
+            listData = []
+            for i in data:
+                  btn =''
+                  if 'Edit' in kwargs.get('permission'):
+                     btn += f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/post/{i.id}" >Edit</a>'
+                  if 'Delete' in kwargs.get('permission'):
+                     btn += f'<button class="btn btn-primary">Delete</button>'
+                  
+                  link = i.post.name
+                  if i.post.type==2:
+                     link = f'<a href="{settings.BASE_URL}movieplanet/admin/website/posts/{i.id}" >{i.post.name}</a>'
+                  post = {
+                        "id":i.id,
+                        "name":link,
+                        "image":f'<img src={i.post.image}/>',
+                        "rate":i.post.rate,
+                        "action":btn
+                  }
+                        
+                  listData.append(post)
+            action = {}
+            if 'Add' in kwargs.get('permission'):
+               action['add'] = f'<button class="btn btn-primary" onclick="openModal()">Add</button>'
+
+            return JsonResponse({
+                  "success": True,
+                  "iTotalRecords":totalLen,
+                  "iTotalDisplayRecords":totalLen,
+                  "aaData":listData,
+                  "action":action
+            }, status=200)    
+      else:
+            return render(request,"movieplanet/admin/trand.html")
+    else:
+      return render(request,"movieplanet/404.html")  
+    
 
 @permission_required('Users')    
 def customers(request,*args,**kwargs):

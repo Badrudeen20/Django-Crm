@@ -1,7 +1,7 @@
 [ 
       {
             "id":1,
-            "name":"Home",
+            "name":"Home e",
             "type":"file",
             "link":"http://127.0.0.1:8000/movieplanet/",
             "icon":""
