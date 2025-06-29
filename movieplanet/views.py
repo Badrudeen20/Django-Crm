@@ -175,7 +175,7 @@ def menu(request,*args,**kwargs):
 
             for i in data:
                   if 'Edit' in kwargs.get('permission'):
-                      action['edit'] = f'<button class="btn btn-primary">Edit</button>' 
+                      action['edit'] = f'<button class="btn btn-primary" onclick="openModal({i.id})">Edit</button>' 
             
                   permission = {
                   "id":i.id,
@@ -192,6 +192,21 @@ def menu(request,*args,**kwargs):
             "action":action
             }, status=200)
       
+      elif request.method == 'PUT' and 'Edit' in kwargs.get('permission'):
+ 
+            data = json.loads(request.body)
+            menu = Menu.objects.using('movieplanet').filter(id=data.get('id')).first()
+            html = f"""<div class="form-group">
+                            <label class="form-label">Name</label>
+                            <input class="form-control" name="menu" value="{menu.name}"  placeholder="Menu name" />
+                        </div>
+                   """
+            return JsonResponse({
+            'status':True,
+            'html':html,
+            'action':settings.BASE_URL+f"movieplanet/admin/website/menu-addedit/{data.get('id')}"
+            }, status=200)
+            
       else:
             return render(request,"movieplanet/admin/menu.html")
     else:
@@ -204,7 +219,19 @@ def menuFind(menus, pid):
             result.append(m) 
     return result
 
-
+@permission_required('Menu') 
+def menuAddEdit(request,*args,**kwargs):
+    if request.method == 'POST' and 'View' in kwargs.get('permission') and 'Menu' in kwargs.get('module') and kwargs.get('access'):
+       parentId = kwargs.get('parentId', None)
+       if parentId:
+            menu = Menu.objects.get(id=parentId)
+            menu.name = request.POST['menu']
+            menu.save()
+       else:
+          pass
+    previous_url = request.META.get('HTTP_REFERER', '/')
+    return redirect(previous_url)
+   
 
 """
 @permission_required('Menu') 

@@ -17,8 +17,9 @@ urlpatterns=[
   ##### Admin ########
   path('admin/dashboard',views.dashboard,name='dashboard'),
   path('admin/website/trand',views.trand),
-  path('admin/website/menu',views.menu),
+  path('admin/website/menu',views.menu,),
   path('admin/website/menu/<int:parentId>',views.menu),
+  path('admin/website/menu-addedit/<int:parentId>',views.menuAddEdit),
   path('admin/website/posts',views.posts,name="posts"),
   path('admin/website/posts/<str:parentId>',views.posts),
   path('admin/website/post/<str:postId>',views.post),

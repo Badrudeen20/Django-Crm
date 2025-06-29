@@ -68,7 +68,7 @@
 </div>
 <div class="modal fade" id="EditModel" tabindex="-1" role="dialog" aria-labelledby="EditModel" aria-hidden="true">
     <div class="modal-dialog" role="document">
-      <form class="modal-content" method="post">
+      <form class="modal-content" method="post" >
         {% csrf_token %}
             <div class="modal-header">
             <h5 class="modal-title" id="EditModelTitle">Modal Edit</h5>
@@ -98,22 +98,22 @@ $(document).ready( function () {
     loadData()
 })
 
-function openModal(obj={}){
-   
-   $('#edit-form').html(`<div class="form-group">
-                            <label class="form-label">Name</label>
-                            <input class="form-control" name="menu" value="${obj.name ?? ''}"  placeholder="Menu name" />
-                        </div>
+function openModal(id){
+    $.ajax({
+        url: "{{ settings.BASE_URL }}",
+        method:"PUT",
+        headers: {'X-CSRFToken': csrftoken},
+        contentType: 'application/json',
+        data:JSON.stringify({id:id})
+    }).then ( function( json, textStatus, jqXHR ) {
+        if(json.status){
+           $('#edit-form').html(json.html);
+           $('#EditModel').find('form').attr('action',json.action)
+           $('#EditModel').modal('show')
+        }
 
-                        <div class="form-group">
-                            <label class="form-label">Link</label>
-                            <input class="form-control" name="link" value="${obj.link ?? ''}"  placeholder="link" />
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Icon</label>
-                            <input class="form-control" name="icon" value="${obj.icon ?? ''}" placeholder="icon" />
-                        </div>`)
-    $('#EditModel').modal('show')
+    });
+
 }
 
 function loadData(){
