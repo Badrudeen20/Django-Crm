@@ -158,9 +158,28 @@ def menu(request,*args,**kwargs):
     if 'Menu' in kwargs.get('module') and kwargs.get('access'):
       if request.method == 'POST' and 'View' in kwargs.get('permission'):
             parentId = kwargs.get('parentId', None)
-            start = request.POST['start']
-            length = request.POST['length']
-            search = request.POST['search']
+            if parentId and 'Edit' in kwargs.get('permission'):
+                  menu = Menu.objects.using('movieplanet').get(id=parentId)
+                  menu.name = request.POST['menu']
+                  menu.link = request.POST['link']
+                  menu.save()
+            elif parentId is None and 'Add' in kwargs.get('permission'):
+                  Menu.objects.using('movieplanet').create(
+                   name=request.POST['menu'], 
+                   link=request.POST['link'],
+                   type=request.POST['type']
+                  )
+            previous_url = request.META.get('HTTP_REFERER', '/')
+            return redirect(previous_url)
+      elif request.method == 'PUT' and 'Edit' in kwargs.get('permission'):
+            data = json.loads(request.body)
+            parentId = kwargs.get('parentId', None)
+            # start = request.POST['start']
+            # length = request.POST['length']
+            # search = request.POST['search']
+            start = int(data.get('start', 1))
+            length = int(data.get('length', 10))
+            search = data.get('search', '')
             startIndex = (int(start)-1) * int(length)
             endIndex = startIndex + int(length)
             listData = []
@@ -172,15 +191,20 @@ def menu(request,*args,**kwargs):
                   totalLen = Menu.objects.using('movieplanet').filter(Q(menuId=parentId)).count()
 
             action = {}
+            if 'Add' in kwargs.get('permission'):
+               action['add'] = f'<button class="btn btn-primary" onclick="addModal()">Add</button>'
 
             for i in data:
+                  action_btn = ''
                   if 'Edit' in kwargs.get('permission'):
-                      action['edit'] = f'<button class="btn btn-primary" onclick="openModal({i.id})">Edit</button>' 
+                      action_btn += f'<button class="btn btn-primary" onclick="editModal({i.id})">Edit</button>' 
+                  if 'Delete' in kwargs.get('permission'):
+                      action_btn += f'<a class="btn btn-danger" href="{settings.BASE_URL}movieplanet/admin/website/menu/{i.id}">Delete</a>' 
             
                   permission = {
                   "id":i.id,
                   "name":(f'<a href="{settings.BASE_URL}movieplanet/admin/website/menu/{i.id}">{i.name}</a>'),
-                  "action":action['edit']
+                  "action":action_btn
                   }
                   listData.append(permission)
  
@@ -191,23 +215,32 @@ def menu(request,*args,**kwargs):
             "aaData":listData,
             "action":action
             }, status=200)
-      
-      elif request.method == 'PUT' and 'Edit' in kwargs.get('permission'):
- 
+      elif request.method == 'PATCH' and 'Edit' in kwargs.get('permission'):
             data = json.loads(request.body)
             menu = Menu.objects.using('movieplanet').filter(id=data.get('id')).first()
             html = f"""<div class="form-group">
                             <label class="form-label">Name</label>
                             <input class="form-control" name="menu" value="{menu.name}"  placeholder="Menu name" />
                         </div>
+                        <div class="form-group">
+                            <label class="form-label">link</label>
+                            <input class="form-control" name="link" value="{menu.link}"  placeholder="Menu link" />
+                        </div>
                    """
             return JsonResponse({
             'status':True,
             'html':html,
-            'action':settings.BASE_URL+f"movieplanet/admin/website/menu-addedit/{data.get('id')}"
-            }, status=200)
-            
+            'action':settings.BASE_URL+f"movieplanet/admin/website/menu/{data.get('id')}"
+            }, status=200)   
       else:
+            if 'Delete' in kwargs.get('permission'):
+                parentId = kwargs.get('parentId', None)
+                if parentId:
+                   obj = Menu.objects.using('movieplanet').get(id=parentId)
+                   obj.delete()
+                   return HttpResponseRedirect(reverse('movieplanet:menu'))    
+
+
             return render(request,"movieplanet/admin/menu.html")
     else:
       return render(request,"movieplanet/404.html")   
@@ -219,124 +252,38 @@ def menuFind(menus, pid):
             result.append(m) 
     return result
 
-@permission_required('Menu') 
-def menuAddEdit(request,*args,**kwargs):
-    if request.method == 'POST' and 'View' in kwargs.get('permission') and 'Menu' in kwargs.get('module') and kwargs.get('access'):
-       parentId = kwargs.get('parentId', None)
-       if parentId:
-            menu = Menu.objects.get(id=parentId)
-            menu.name = request.POST['menu']
-            menu.save()
-       else:
-          pass
-    previous_url = request.META.get('HTTP_REFERER', '/')
-    return redirect(previous_url)
+
    
 
-"""
-@permission_required('Menu') 
-def menu(request,*args,**kwargs):
-    if 'Menu' in kwargs.get('module') and kwargs.get('access'):
-      if request.method == 'POST' and 'View' in kwargs.get('permission'):
-            parentId = kwargs.get('parentId', '')
-            start = request.POST['start']
-            length = request.POST['length']
-            search = request.POST['search']
-            startIndex = (int(start)-1) * int(length)
-            endIndex = startIndex + int(length)
-            file_path = os.path.join(settings.BASE_DIR, 'movieplanet', 'menubar.json')
-            listData = []
-            with open(file_path, 'r') as file:
-                  menus =  json.load(file)
-                  m = []
-                  if parentId:
-                     menus = menuFind(menus,parentId)
-                  if search :
-                        data = menus[int(startIndex):int(endIndex)]
-                  else:
-                        data = menus[int(startIndex):int(endIndex)]
-                        
-                  totalLen = 1
-                  
-                  for idx in menus:
-                        if 'parentId' not in idx:
-                              totalLen +=1  
-                  for m in data: 
-                        name = m['name']
-                        id = m['id']
-                        if 'Edit' in kwargs.get('permission'):
-                              uobj={}
-                              uobj['id'] = id
-                              uobj['name'] = name
-                              uobj['icon'] = m['icon']
-                              if m['type']=='file':
-                                 uobj['link'] = m['link']
-                             
-                              btn = f'<button class="btn btn-primary" data-bs-toggle="modal" onclick="openModal({uobj})">Update</button>'
-                        else:
-                              btn = f'<button class="btn btn-primary">Update</button>' 
-                        if parentId:
-                              if m['type']=='folder':
-                                    name = f'<a href="{settings.BASE_URL}movieplanet/admin/website/menu/{id}">{name}</a>'
-                              elif m['type']=='file':
-                                    name = f'<a href="#">{name}</a>'
-                               
-                              post = {
-                                    "id":id,
-                                    "name":name,
-                                    "action":btn
-                              }      
-                              listData.append(post)
-                        else:
-                              if 'parentId' not in m:
-                                    if m['type']=='folder':
-                                          name = f'<a href="{settings.BASE_URL}movieplanet/admin/website/menu/{id}">{name}</a>'
-                                    elif m['type']=='file':
-                                          name = f'<a href="#">{name}</a>'
-                                    post = {
-                                          "id":id,
-                                          "name":name,
-                                          "action":btn
-                                    }      
-                                    listData.append(post)
-            
-            action = {}
-            if 'Add' in kwargs.get('permission'):
-                action['add'] = f'<button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#AddModel">Add</button>' 
-            
-            return JsonResponse({
-            "success": True,
-            "iTotalRecords":totalLen,
-            "iTotalDisplayRecords":totalLen,
-            "aaData":listData,
-            "action":action
-            }, status=200)
-      elif request.method == 'PUT' and 'Edit' in kwargs.get('permission'):
-            file_path = os.path.join(settings.BASE_DIR, 'movieplanet', 'toggle.json')
-            data['new_key'] = 'new_value'
-            with open(file_path, 'w', encoding='utf-8') as file:
-                  json.dump(data, file, indent=4)
-      else:
-            return render(request,"movieplanet/admin/menu.html")
-    else:
-      return render(request,"movieplanet/404.html")   
-
-def menuFind(menus, pid):
-    result = []
-    for m in menus:
-        if 'parentId' in m and m['parentId'] == pid:
-            result.append(m) 
-    return result
-"""
 
 @permission_required('Posts') 
 def posts(request,*args,**kwargs):
     if 'Posts' in kwargs.get('module') and kwargs.get('access'):
       parentId = kwargs.get('parentId', None)
       if request.method == 'POST' and 'View' in kwargs.get('permission'):
-            start = request.POST['start']
-            length = request.POST['length']
-            search = request.POST['search']
+            if parentId and 'Edit' in kwargs.get('permission'):
+                  update = Posts.objects.using('movieplanet').filter(id=parentId).first()
+                  update.image = post.get('image', '')
+                  update.rate = post.get('rate', '')
+                  update.size = post.get('size', '')
+                  update.genre = post.get('genre', '')
+                  update.lang = post.get('lang', '')
+                  update.status = post.get('status', '')
+                  update.story = post.get('story', '')
+                  update.link = post.get('link', '')
+                  update.menu = post.get('menu', '')
+                  update.release_date = post.get('release_date', '')
+                  update.save()
+            elif parentId is None and 'Add' in kwargs.get('permission'):
+               pass  
+      elif request.method == 'PUT' and 'Add' in kwargs.get('permission'):
+            data = json.loads(request.body)
+            # start = request.POST['start']
+            # length = request.POST['length']
+            # search = request.POST['search']
+            start = int(data.get('start', 1))
+            length = int(data.get('length', 10))
+            search = data.get('search', '')
             startIndex = (int(start)-1) * int(length)
             endIndex = startIndex + int(length)
             
@@ -352,7 +299,8 @@ def posts(request,*args,**kwargs):
             for i in data:
                   btn =''
                   if 'Edit' in kwargs.get('permission'):
-                     btn += f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/post/{i.id}" >Edit</a>'
+                     # btn += f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/post/{i.id}" >Edit</a>'
+                     btn += f'<a class="btn btn-primary" onclick="" >Edit</a>'
                   if 'Delete' in kwargs.get('permission'):
                      btn += f'<button class="btn btn-primary">Delete</button>'
                   
@@ -379,9 +327,9 @@ def posts(request,*args,**kwargs):
                   "aaData":listData,
                   "action":action
             }, status=200)
-      elif request.method == 'PUT' and 'Add' in kwargs.get('permission'):
-           pass
-           """"
+
+           
+            """
             try:
                   body_unicode = request.body.decode('utf-8')
                   if not body_unicode:
@@ -428,7 +376,27 @@ def posts(request,*args,**kwargs):
             
             except json.JSONDecodeError:
                   return JsonResponse({"error": "Invalid JSON format"}, status=400)
-           """
+            """
+      elif request.method == 'PATCH' and 'Add' in kwargs.get('permission'):
+          
+            data = json.loads(request.body)
+            post = Posts.objects.using('movieplanet').filter(id=data.get('id')).values().first()
+            print(post)
+            html=''
+            # html = f"""<div class="form-group">
+            #                 <label class="form-label">Name</label>
+            #                 <input class="form-control" name="menu" value="{menu.name}"  placeholder="Menu name" />
+            #             </div>
+            #             <div class="form-group">
+            #                 <label class="form-label">link</label>
+            #                 <input class="form-control" name="link" value="{menu.link}"  placeholder="Menu link" />
+            #             </div>
+            #        """
+            return JsonResponse({
+            'status':True,
+            'html':html,
+            'action':settings.BASE_URL+f"movieplanet/admin/website/posts/{data.get('id')}"
+            }, status=200) 
       else:
             return render(request,"movieplanet/admin/post.html")
     else:
@@ -465,9 +433,15 @@ def post(request,*args,**kwargs):
 def trand(request,*args,**kwargs):
     if 'Trand' in kwargs.get('module') and kwargs.get('access'):
       if request.method == 'POST' and 'View' in kwargs.get('permission'):
-            start = request.POST['start']
-            length = request.POST['length']
-            search = request.POST['search']
+         pass
+      elif request.method == 'PUT' and 'View' in kwargs.get('permission'):
+            # start = request.POST['start']
+            # length = request.POST['length']
+            # search = request.POST['search']
+            data = json.loads(request.body)
+            start = int(data.get('start', 1))
+            length = int(data.get('length', 10))
+            search = data.get('search', '')
             startIndex = (int(start)-1) * int(length)
             endIndex = startIndex + int(length)
             
@@ -493,15 +467,15 @@ def trand(request,*args,**kwargs):
                   post = {
                         "id":i.id,
                         "name":link,
-                        "image":f'<img src={i.post.image}/>',
-                        "rate":i.post.rate,
+                        # "image":f'<img src={i.post.image}/>',
+                        # "rate":i.post.rate,
                         "action":btn
                   }
                         
                   listData.append(post)
             action = {}
             if 'Add' in kwargs.get('permission'):
-               action['add'] = f'<button class="btn btn-primary" onclick="openModal()">Add</button>'
+               action['add'] = f'<button class="btn btn-primary" onclick="addModal()">Add</button>'
 
             return JsonResponse({
                   "success": True,
@@ -711,10 +685,6 @@ def sidebarList(request,*args,**kwargs):
       "success": True,
       "data":sidebarList
    }, status=200)   
-
-
-
-
 
 
 ############# Auth ############
@@ -989,7 +959,160 @@ def detail(request,Link=None,parentId=None):
       }
       return render(request,"movieplanet/detail.html",context)
 
+def menubar(request,*args,**kwargs):
+      file_path = os.path.join(settings.BASE_DIR, 'movieplanet', 'menubar.json')
+      try:
+            menu = Menu.objects.using('movieplanet').filter(status=1).all()
+            html = ''
+            for m in menu:
+                if m.menuId is None:
+                   if m.type == 2:
+                        html += (f'<li><button class="nav-link dropdown-btn" data-dropdown="dropdown{m.id}" aria-haspopup="true" aria-expanded="false" aria-label="discover">{m.name}<i class="bx bx-chevron-down" aria-hidden="true"></i></button>'
+                                    f'{menuBarLoop(menu,m.id)}'
+                                    f'</li>')
+                   elif m.type == 1:  
+                        html += (f'<li><a class="nav-link dropdown-link dropdown-btn" data-dropdown="dropdown{m.id}" href="{m.link}" aria-haspopup="true" aria-expanded="false">{m.name}</a></li>')
+                  
+            return JsonResponse({"status":True,"Menus":html})
+      except Exception as e:
+            return JsonResponse({"status":False,"error": str(e)}, status=500)
 
+def menuBarLoop(Menus=[],MenuId=None,IsLoop=None):
+   check = False
+   menu = f'<div id="dropdown{MenuId}" class="dropdown"><ul role="menu">'
+   arrow = ''
+   if IsLoop:
+      menu = f'<div id="dropdown{MenuId}" class="dropdown loopMenu"><ul role="menu">'
+      arrow = '<i class="bx bx-chevron-down" aria-hidden="true"></i>'
+   for m in Menus:
+      check = True
+      if m.menuId and int(m.menuId) == int(MenuId):
+            if m.type == 2:
+                  menu += (f'<li><button class="nav-link dropdown-btn" data-dropdown="dropdown{m.id}" aria-haspopup="true" aria-expanded="false" aria-label="discover">{m.name}<i class="bx bx-chevron-down" aria-hidden="true"></i></button>'
+                              f'{menuBarLoop(menu,m.id)}'
+                              f'</li>')
+            elif m.type == 1:  
+                  menu += (f'<li><a class="nav-link dropdown-link dropdown-btn" data-dropdown="dropdown{m.id}" href="{m.link}" aria-haspopup="true" aria-expanded="false">{m.name}</a></li>')
+                                 
+   menu +='</ul></div>'
+   if check:
+      return menu
+   else:    
+      return ''
+
+
+
+"""
+@permission_required('Menu') 
+def menuAddEdit(request,*args,**kwargs):
+    if request.method == 'POST' and 'View' in kwargs.get('permission') and 'Menu' in kwargs.get('module') and kwargs.get('access'):
+       parentId = kwargs.get('parentId', None)
+       if parentId:
+            menu = Menu.objects.get(id=parentId)
+            menu.name = request.POST['menu']
+            menu.save()
+       else:
+          pass
+    previous_url = request.META.get('HTTP_REFERER', '/')
+    return redirect(previous_url)
+
+@permission_required('Menu') 
+def menu(request,*args,**kwargs):
+    if 'Menu' in kwargs.get('module') and kwargs.get('access'):
+      if request.method == 'POST' and 'View' in kwargs.get('permission'):
+            parentId = kwargs.get('parentId', '')
+            start = request.POST['start']
+            length = request.POST['length']
+            search = request.POST['search']
+            startIndex = (int(start)-1) * int(length)
+            endIndex = startIndex + int(length)
+            file_path = os.path.join(settings.BASE_DIR, 'movieplanet', 'menubar.json')
+            listData = []
+            with open(file_path, 'r') as file:
+                  menus =  json.load(file)
+                  m = []
+                  if parentId:
+                     menus = menuFind(menus,parentId)
+                  if search :
+                        data = menus[int(startIndex):int(endIndex)]
+                  else:
+                        data = menus[int(startIndex):int(endIndex)]
+                        
+                  totalLen = 1
+                  
+                  for idx in menus:
+                        if 'parentId' not in idx:
+                              totalLen +=1  
+                  for m in data: 
+                        name = m['name']
+                        id = m['id']
+                        if 'Edit' in kwargs.get('permission'):
+                              uobj={}
+                              uobj['id'] = id
+                              uobj['name'] = name
+                              uobj['icon'] = m['icon']
+                              if m['type']=='file':
+                                 uobj['link'] = m['link']
+                             
+                              btn = f'<button class="btn btn-primary" data-bs-toggle="modal" onclick="openModal({uobj})">Update</button>'
+                        else:
+                              btn = f'<button class="btn btn-primary">Update</button>' 
+                        if parentId:
+                              if m['type']=='folder':
+                                    name = f'<a href="{settings.BASE_URL}movieplanet/admin/website/menu/{id}">{name}</a>'
+                              elif m['type']=='file':
+                                    name = f'<a href="#">{name}</a>'
+                               
+                              post = {
+                                    "id":id,
+                                    "name":name,
+                                    "action":btn
+                              }      
+                              listData.append(post)
+                        else:
+                              if 'parentId' not in m:
+                                    if m['type']=='folder':
+                                          name = f'<a href="{settings.BASE_URL}movieplanet/admin/website/menu/{id}">{name}</a>'
+                                    elif m['type']=='file':
+                                          name = f'<a href="#">{name}</a>'
+                                    post = {
+                                          "id":id,
+                                          "name":name,
+                                          "action":btn
+                                    }      
+                                    listData.append(post)
+            
+            action = {}
+            if 'Add' in kwargs.get('permission'):
+                action['add'] = f'<button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#AddModel">Add</button>' 
+            
+            return JsonResponse({
+            "success": True,
+            "iTotalRecords":totalLen,
+            "iTotalDisplayRecords":totalLen,
+            "aaData":listData,
+            "action":action
+            }, status=200)
+      elif request.method == 'PUT' and 'Edit' in kwargs.get('permission'):
+            file_path = os.path.join(settings.BASE_DIR, 'movieplanet', 'toggle.json')
+            data['new_key'] = 'new_value'
+            with open(file_path, 'w', encoding='utf-8') as file:
+                  json.dump(data, file, indent=4)
+      else:
+            return render(request,"movieplanet/admin/menu.html")
+    else:
+      return render(request,"movieplanet/404.html")   
+
+def menuFind(menus, pid):
+    result = []
+    for m in menus:
+        if 'parentId' in m and m['parentId'] == pid:
+            result.append(m) 
+    return result
+
+"""
+
+"""
 def menubar(request,*args,**kwargs):
       file_path = os.path.join(settings.BASE_DIR, 'movieplanet', 'menubar.json')
       try:
@@ -1036,9 +1159,10 @@ def menuLoop(Menus=[],MenuId=None,IsLoop=None):
       return menu
    else:    
       return ''
+   
 
 
-"""
+
 
 def excelPost(request,*args,**kwargs):
       try:

@@ -131,9 +131,15 @@
                 
                 $.ajax({
                     url: "{{ settings.BASE_URL }}",
-                    method:"POST",
+                    method:"PUT",
                     headers: {'X-CSRFToken': csrftoken},
-                    data:{start:pgno, length:4,search:search,type:'View'}
+                    //data:{start:pgno, length:4,search:search,type:'View'}
+                    data: JSON.stringify({
+                        start: pgno,
+                        length: 4,
+                        search: search,
+                        type: 'View'
+                    }),
                 }).then ( function( json, textStatus, jqXHR ) {
                     console.log(json)
                     if(json.success){

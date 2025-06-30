@@ -8,7 +8,7 @@
 
 
 <div class="container mt-2">
-    <button  class="btn btn-primary my-2">Add Trand</button>
+    <div class="action"></div>
     <div class="row">
         <div class="col-12">
             <table id="customer_table"  class="display" style="width:100%">
@@ -16,8 +16,8 @@
                     <tr>
                         <th>Id</th>
                         <th>Name</th>
-                        <th>Image</th>
-                        <th>Rate</th>
+                        <!-- <th>Image</th>
+                        <th>Rate</th> -->
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -28,33 +28,45 @@
       </div>
   
 </div>
-<!-- Delete -->
-<div class="modal fade" id="DelModel" tabindex="-1" role="dialog" aria-labelledby="DelModel" aria-hidden="true">
+
+<div class="modal fade" id="AddModel" tabindex="-1" role="dialog" aria-labelledby="AddModel" aria-hidden="true">
     <div class="modal-dialog" role="document">
-      <form class="modal-content" method="post">
+      <form class="modal-content" method="POST" >
         {% csrf_token %}
             <div class="modal-header">
-            <h5 class="modal-title" id="DelModelTitle">Modal Delete</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <h5 class="modal-title" id="AddModelTitle">Modal Add</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                        <div class="form-group">
-                            <label for="content">Are you sure</label>
-                            <input type="hidden" name="type" value="Delete">
-                            <input type="hidden" name="delid"  >
-                        </div> 
+                <div class="form-group">
+                    <label class="form-label">Name</label>
+                    <input class="form-control" name="menu" placeholder="Menu name" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Type</label>
+                    <select class="form-select" name="type">
+                        <option selected value="1">file</option>
+                        <option value="2">folder</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Link</label>
+                    <input class="form-control" name="link" placeholder="link" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Icon</label>
+                    <input class="form-control" name="icon" placeholder="icon" />
+                </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                <button type="submit" class="btn btn-primary">Delete</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Submit</button>
             </div>
         </form>
     </div>
 </div>
-
-
 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
@@ -78,11 +90,20 @@
                 
                 $.ajax({
                     url: "{{ settings.BASE_URL }}",
-                    method:"POST",
+                    method:"PUT",
                     headers: {'X-CSRFToken': csrftoken},
-                    data:{start:pgno, length:4,search:search,type:'View'}
+                    //data:{start:pgno, length:4,search:search,type:'View'}
+                    data: JSON.stringify({
+                        start: pgno,
+                        length: 4,
+                        search: search,
+                        type: 'View'
+                    }),
                 }).then ( function( json, textStatus, jqXHR ) {
                     console.log(json)
+                    if(json.success){
+                        $('.action').html(json.action.add)
+                    }
                     callback(json);
                 });
             },
@@ -90,8 +111,8 @@
             columns: [
                 { data: "id" },
                 { data: "name" },
-                { data: "image" },
-                { data: "rate" },
+                // { data: "image" },
+                // { data: "rate" },
                 { data: "action" },
                 
             ],
@@ -99,7 +120,9 @@
         });
     }
 
-
+    function addModal(id){
+        $('#AddModel').modal('show')
+    }
 </script>
 
 {% endblock %}

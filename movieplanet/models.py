@@ -33,8 +33,14 @@ class Trand(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 class Menu(models.Model):
+    FILE_TYPE_CHOICES = [
+        (1, 'File'),
+        (2, 'Folder'),
+    ]
     name = models.CharField(max_length=100)
     menuId = models.CharField(max_length=100,null=True)
+    type = models.IntegerField(choices=FILE_TYPE_CHOICES, default=1)
+    link = models.TextField(null=True, blank=True)
     status = models.CharField(max_length=100)
 
 
