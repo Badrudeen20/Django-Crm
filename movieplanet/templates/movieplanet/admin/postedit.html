@@ -102,11 +102,17 @@
               </div> 
               <div class="col-sm-6">
                   <div class="form-group">
+                      <label for="duration">Duration</label>
+                      <input type="text" name="duration" id="duration" value="{{post.duration}}" class="form-control" />
+                  </div>
+              </div>
+              <div class="col-sm-6">
+                  <div class="form-group">
                       <label for="menu">Menu Search</label>
-                      <input type="text" name="menu" value="{{post.menu}}" class="form-control" />
+                      <textarea class="form-control" name="menu" id="story">{{post.menu}}</textarea>
                   </div>
               </div> 
-              <div class="col-sm-12">
+              <div class="col-sm-6">
                   <div class="form-group">
                      <label for="story">Story</label>
                      <textarea class="form-control" value="" name="story" id="story">{{post.story}}</textarea>

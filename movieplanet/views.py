@@ -7,15 +7,16 @@ from movieplanet.models import *
 from django.db.models import Q
 from django.contrib import messages 
 from django.conf import settings
-from decimal import Decimal
+# from decimal import Decimal
 import json
 from django.http import JsonResponse
 from django.core.serializers.json import DjangoJSONEncoder
-import os
-import openpyxl
+# import os
+# import openpyxl
 import random
 from django.core.mail import send_mail
 from datetime import datetime
+from datetime import time
 from movieplanet.tasks import send_welcome_email
 from movieplanet.decorators import (
    permission_required,xhr_request_only
@@ -258,10 +259,31 @@ def menuFind(menus, pid):
 
 @permission_required('Posts') 
 def posts(request,*args,**kwargs):
+    
     if 'Posts' in kwargs.get('module') and kwargs.get('access'):
       parentId = kwargs.get('parentId', None)
+      action = {}
       if request.method == 'POST' and 'View' in kwargs.get('permission'):
-            if parentId and 'Edit' in kwargs.get('permission'):
+            if parentId and parentId=='create' and 'Add' in kwargs.get('permission'):
+                  post = request.POST
+                  Posts.objects.using('movieplanet').create(
+                        name=post.get('name', ''),
+                        image=post.get('image', ''),
+                        rate=post.get('rate', ''),
+                        size=post.get('size', ''),
+                        genre=post.get('genre', ''),
+                        lang=post.get('lang', ''),
+                        status=post.get('status', ''),
+                        starcast=post.get('starcast', ''),
+                        story=post.get('story', ''),
+                        link=post.get('link', ''),
+                        menu=post.get('menu', ''),
+                        duration=post.get('duration', ''),
+                        release_date=post.get('release_date', '')
+                  )
+                  return HttpResponseRedirect(reverse('movieplanet:posts')) 
+            elif parentId and 'Edit' in kwargs.get('permission'):
+                  post = request.POST
                   update = Posts.objects.using('movieplanet').filter(id=parentId).first()
                   update.image = post.get('image', '')
                   update.rate = post.get('rate', '')
@@ -269,14 +291,17 @@ def posts(request,*args,**kwargs):
                   update.genre = post.get('genre', '')
                   update.lang = post.get('lang', '')
                   update.status = post.get('status', '')
+                  update.starcast = post.get('starcast', '')
                   update.story = post.get('story', '')
                   update.link = post.get('link', '')
                   update.menu = post.get('menu', '')
+                  update.duration=post.get('duration', '')
                   update.release_date = post.get('release_date', '')
                   update.save()
-            elif parentId is None and 'Add' in kwargs.get('permission'):
-               pass  
-      elif request.method == 'PUT' and 'Add' in kwargs.get('permission'):
+              
+            previous_url = request.META.get('HTTP_REFERER', '/')
+            return redirect(previous_url)
+      elif request.method == 'PUT' and 'View' in kwargs.get('permission'):
             data = json.loads(request.body)
             # start = request.POST['start']
             # length = request.POST['length']
@@ -299,10 +324,10 @@ def posts(request,*args,**kwargs):
             for i in data:
                   btn =''
                   if 'Edit' in kwargs.get('permission'):
-                     # btn += f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/post/{i.id}" >Edit</a>'
-                     btn += f'<a class="btn btn-primary" onclick="" >Edit</a>'
+                     btn += f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/posts/{i.id}" >Edit</a>'
+                     # btn += f'<a class="btn btn-primary" onclick="editModal({i.id})">Edit</a>'
                   if 'Delete' in kwargs.get('permission'):
-                     btn += f'<button class="btn btn-primary">Delete</button>'
+                     btn += f'<button class="btn btn-danger" onclick="deleteModal({i.id})">Delete</button>'
                   
                   link = i.name
                   if i.type==2:
@@ -316,9 +341,9 @@ def posts(request,*args,**kwargs):
                   }
                         
                   listData.append(post)
-            action = {}
-            if 'Add' in kwargs.get('permission'):
-               action['add'] = f'<button class="btn btn-primary" onclick="openModal()">Add</button>'
+            
+            # if 'Add' in kwargs.get('permission'):
+            #    action['add'] = f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/post">Add</a>'
 
             return JsonResponse({
                   "success": True,
@@ -327,106 +352,28 @@ def posts(request,*args,**kwargs):
                   "aaData":listData,
                   "action":action
             }, status=200)
-
-           
-            """
-            try:
-                  body_unicode = request.body.decode('utf-8')
-                  if not body_unicode:
-                        return JsonResponse({"error": "Empty request body"}, status=400)
-                  post = json.loads(body_unicode)
-                  if Posts.objects.using('movieplanet').filter(name=post['name']).exclude(id=post['post']).exists():
-                       msg="Movie exist"
-                  else:
-                        if post['post']:
-                           update = Posts.objects.using('movieplanet').filter(id=post['post']).first()
-                           update.image = post.get('image', '')
-                           update.rate = post.get('rate', '')
-                           update.size = post.get('size', '')
-                           update.genre = post.get('genre', '')
-                           update.lang = post.get('lang', '')
-                           update.status = post.get('status', '')
-                           update.story = post.get('story', '')
-                           update.link = post.get('link', '')
-                           update.menu = post.get('menu', '')
-                           update.release_date = post.get('release_date', '')
-                           update.save()
-                           msg="Updated success"
-                        else:
-                              Posts.objects.create(
-                                    name=post['name'],
-                                    image=post.get('image', ''),
-                                    rate=post.get('rate', 'N/A'),
-                                    size=post.get('size', 'N/A'),
-                                    genre=post.get('genre', 'N/A'),
-                                    type=post.get('type', 2),
-                                    lang=post.get('lang', 'N/A'),
-                                    story=post.get('story', 'N/A'),
-                                    status=post.get('status', 0),
-                                    link=post.get('link', ''),
-                                    menu=post.get('menu', ''),
-                                    release_date=post.get('release_date', ''),
-                                    parent=parentId
-                              )
-                              msg="Inserted success"
-                  return JsonResponse({
-                        "status":True,
-                        "message":msg
-                  })
-            
-            except json.JSONDecodeError:
-                  return JsonResponse({"error": "Invalid JSON format"}, status=400)
-            """
-      elif request.method == 'PATCH' and 'Add' in kwargs.get('permission'):
-          
+      elif request.method == 'PATCH' and 'Delete' in kwargs.get('permission'):
             data = json.loads(request.body)
-            post = Posts.objects.using('movieplanet').filter(id=data.get('id')).values().first()
-            print(post)
-            html=''
-            # html = f"""<div class="form-group">
-            #                 <label class="form-label">Name</label>
-            #                 <input class="form-control" name="menu" value="{menu.name}"  placeholder="Menu name" />
-            #             </div>
-            #             <div class="form-group">
-            #                 <label class="form-label">link</label>
-            #                 <input class="form-control" name="link" value="{menu.link}"  placeholder="Menu link" />
-            #             </div>
-            #        """
+            obj = Posts.objects.using('movieplanet').get(id=data.get('id'))
+            obj.delete()
             return JsonResponse({
-            'status':True,
-            'html':html,
-            'action':settings.BASE_URL+f"movieplanet/admin/website/posts/{data.get('id')}"
-            }, status=200) 
+                  "status": True,
+                  "msg":"Item delete successfully!"
+            }, status=200)
       else:
-            return render(request,"movieplanet/admin/post.html")
+            if 'Add' in kwargs.get('permission'):
+               action['add'] = f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/posts/create">Add</a>'
+            
+            if parentId and parentId=='create':
+               return render(request,"movieplanet/admin/postedit.html")  
+            elif parentId and 'Edit' in kwargs.get('permission'):
+               post = Posts.objects.using('movieplanet').filter(id=parentId).values().first()
+               return render(request,"movieplanet/admin/postedit.html",{"post":post})
+            return render(request,"movieplanet/admin/post.html",{"action":action})
     else:
       return render(request,"movieplanet/404.html")  
 
 
-@permission_required('Posts') 
-def post(request,*args,**kwargs):
-    if 'Posts' in kwargs.get('module') and kwargs.get('access') and 'Edit' in kwargs.get('permission'):
-      postId = kwargs.get('postId', None)
-      if request.method == 'POST':
-            post = request.POST
-           
-            update = Posts.objects.using('movieplanet').filter(id=postId).first()
-            update.image = post.get('image', '')
-            update.rate = post.get('rate', '')
-            update.size = post.get('size', '')
-            update.genre = post.get('genre', '')
-            update.lang = post.get('lang', '')
-            update.status = post.get('status', '')
-            update.story = post.get('story', '')
-            update.link = post.get('link', '')
-            update.menu = post.get('menu', '')
-            update.release_date = post.get('release_date', '')
-            update.save()
-            msg="Updated success"
-      postEdit =Posts.objects.using('movieplanet').filter(id=postId).values().first()
-      return render(request,"movieplanet/admin/postedit.html",{"post":postEdit})
-    else:
-      return HttpResponseRedirect(reverse('movieplanet:posts'))    
 
 
 @permission_required('Trand') 
@@ -459,7 +406,7 @@ def trand(request,*args,**kwargs):
                   if 'Edit' in kwargs.get('permission'):
                      btn += f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/post/{i.id}" >Edit</a>'
                   if 'Delete' in kwargs.get('permission'):
-                     btn += f'<button class="btn btn-primary">Delete</button>'
+                     btn += f'<button class="btn btn-danger">Delete</button>'
                   
                   link = i.post.name
                   if i.post.type==2:
@@ -960,7 +907,6 @@ def detail(request,Link=None,parentId=None):
       return render(request,"movieplanet/detail.html",context)
 
 def menubar(request,*args,**kwargs):
-      file_path = os.path.join(settings.BASE_DIR, 'movieplanet', 'menubar.json')
       try:
             menu = Menu.objects.using('movieplanet').filter(status=1).all()
             html = ''
@@ -1003,6 +949,107 @@ def menuBarLoop(Menus=[],MenuId=None,IsLoop=None):
 
 
 """
+@permission_required('Posts') 
+def post(request,*args,**kwargs):
+    if 'Posts' in kwargs.get('module') and kwargs.get('access'):
+      if request.method == 'POST' and 'Add' in kwargs.get('permission'):
+            post = request.POST
+            duration = post.get('duration', '')
+            new_post = Posts.objects.using('movieplanet').create(
+                  name=post.get('name', ''),
+                  image=post.get('image', ''),
+                  rate=post.get('rate', ''),
+                  size=post.get('size', ''),
+                  genre=post.get('genre', ''),
+                  lang=post.get('lang', ''),
+                  status=post.get('status', ''),
+                  starcast=post.get('starcast', ''),
+                  story=post.get('story', ''),
+                  link=post.get('link', ''),
+                  menu=post.get('menu', ''),
+                  duration=post.get('duration', ''),
+                  release_date=post.get('release_date', '')
+            )
+            return HttpResponseRedirect(reverse('movieplanet:posts'))    
+      return render(request,"movieplanet/admin/postedit.html")
+    else:
+      return render(request,"movieplanet/404.html")  
+
+        
+try:
+      body_unicode = request.body.decode('utf-8')
+      if not body_unicode:
+            return JsonResponse({"error": "Empty request body"}, status=400)
+      post = json.loads(body_unicode)
+      if Posts.objects.using('movieplanet').filter(name=post['name']).exclude(id=post['post']).exists():
+            msg="Movie exist"
+      else:
+            if post['post']:
+                  update = Posts.objects.using('movieplanet').filter(id=post['post']).first()
+                  update.image = post.get('image', '')
+                  update.rate = post.get('rate', '')
+                  update.size = post.get('size', '')
+                  update.genre = post.get('genre', '')
+                  update.lang = post.get('lang', '')
+                  update.status = post.get('status', '')
+                  update.story = post.get('story', '')
+                  update.link = post.get('link', '')
+                  update.menu = post.get('menu', '')
+                  update.release_date = post.get('release_date', '')
+                  update.save()
+                  msg="Updated success"
+            else:
+                  Posts.objects.create(
+                        name=post['name'],
+                        image=post.get('image', ''),
+                        rate=post.get('rate', 'N/A'),
+                        size=post.get('size', 'N/A'),
+                        genre=post.get('genre', 'N/A'),
+                        type=post.get('type', 2),
+                        lang=post.get('lang', 'N/A'),
+                        story=post.get('story', 'N/A'),
+                        status=post.get('status', 0),
+                        link=post.get('link', ''),
+                        menu=post.get('menu', ''),
+                        release_date=post.get('release_date', ''),
+                        parent=parentId
+                  )
+                  msg="Inserted success"
+      return JsonResponse({
+            "status":True,
+            "message":msg
+      })
+
+except json.JSONDecodeError:
+      return JsonResponse({"error": "Invalid JSON format"}, status=400)
+
+
+@permission_required('Posts') 
+def post(request,*args,**kwargs):
+    if 'Posts' in kwargs.get('module') and kwargs.get('access') and 'Edit' in kwargs.get('permission'):
+      postId = kwargs.get('postId', None)
+      if request.method == 'POST':
+            post = request.POST
+           
+            update = Posts.objects.using('movieplanet').filter(id=postId).first()
+            update.image = post.get('image', '')
+            update.rate = post.get('rate', '')
+            update.size = post.get('size', '')
+            update.genre = post.get('genre', '')
+            update.lang = post.get('lang', '')
+            update.status = post.get('status', '')
+            update.story = post.get('story', '')
+            update.link = post.get('link', '')
+            update.menu = post.get('menu', '')
+            update.release_date = post.get('release_date', '')
+            update.save()
+            msg="Updated success"
+      postEdit =Posts.objects.using('movieplanet').filter(id=postId).values().first()
+      return render(request,"movieplanet/admin/postedit.html",{"post":postEdit})
+    else:
+      return HttpResponseRedirect(reverse('movieplanet:posts'))   
+
+
 @permission_required('Menu') 
 def menuAddEdit(request,*args,**kwargs):
     if request.method == 'POST' and 'View' in kwargs.get('permission') and 'Menu' in kwargs.get('module') and kwargs.get('access'):

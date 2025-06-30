@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container d-flex justify-content-center">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.css" />
-<style>
+<!-- <style>
     @media (min-width: 576px) {
     .modal-dialog {
         max-width: 700px; /* Change width as needed */
@@ -23,13 +23,14 @@
         max-width: 900px;
     }
 }
-</style>
+</style> -->
 
 
 <div class="container mt-2">
-    <!-- <button type="button"  data-bs-toggle="modal" data-bs-target="#AddEditModel" class="btn btn-primary my-2">Add Post</button>
-    <button type="button"  data-bs-toggle="modal" data-bs-target="#ExcelPostModel" class="btn btn-primary my-2">Uplaod Post</button> -->
-    <div class="action"></div>
+    
+    <div class="action">
+        {{action.add|safe }}
+    </div>
     <div class="row">
         <div class="col-12">
             <table id="customer_table"  class="display " style="width:100%;">
@@ -51,28 +52,30 @@
 </div>
 
 
-<div class="modal fade" id="AddEditModel" tabindex="-1" role="dialog" aria-labelledby="AddEditModel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-      <form class="modal-content" method="post" id="post-form">
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModal" >
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
         {% csrf_token %}
             <div class="modal-header">
-            <h5 class="modal-title" id="DelModelTitle">Modal Add</h5>
+            <h5 class="modal-title" id="DelModelTitle">Modal Delete</h5>
                 <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body row" id="modal-fields">
-
+            <div class="modal-body text-center">
+                <p>Are you sure! Do you want to delete.</p>
             </div>
             <div class="modal-footer">
-
-                <button type="submit" class="btn btn-primary">Submit</button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary" >Yes</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
             </div>
-      </form>
+      </div>
     </div>
 </div>
 
+
+
+<!-- 
 <div class="modal fade" id="ExcelPostModel" tabindex="-1" role="dialog" aria-labelledby="ExcelPostModel" aria-hidden="true">
     <div class="modal-dialog" role="document">
       <form class="modal-content" method="post" id="excel-post-form">
@@ -102,7 +105,7 @@
             </div>
       </form>
     </div>
-</div>
+</div> -->
 
 
 
@@ -142,9 +145,9 @@
                     }),
                 }).then ( function( json, textStatus, jqXHR ) {
                     console.log(json)
-                    if(json.success){
-                        $('.action').html(json.action.add)
-                    }
+                    // if(json.success){
+                    //     $('.action').html(json.action.add)
+                    // }
                     callback(json);
                 });
             },
@@ -161,6 +164,36 @@
         });
     }
    
+
+    function deleteModal(id){
+        $('#deleteModal').modal('show')
+        $("#deleteModal").find('button[type=submit]').attr('onclick',"deleteItem("+id+")")
+    }
+
+    function deleteItem(id){
+        $.ajax({
+            url: '{{ settings.BASE_URL }}', // Replace with your server endpoint
+            method: 'PATCH',
+            data: JSON.stringify({id:id}),
+            headers: {'X-CSRFToken': csrftoken},
+            contentType: 'application/json',
+            success: function(response) {
+                console.log(response)
+                $('#deleteModal').modal('hide')
+                if(response.status){
+                    $('table.display').DataTable().clear().destroy();
+                    loadData()
+                }
+                
+
+            },
+            error: function(xhr) {
+                console.error('Error submitting form:', xhr.responseText);
+            }
+        });  
+    }
+    /*
+
     $('#post-form').submit(function(e){
         e.preventDefault();
         // let formData = $(this).serialize()
@@ -184,10 +217,33 @@
             }
         });
     })
+   
+
+    function editModal(id){
+        $.ajax({
+            url: '{{ settings.BASE_URL }}posts/'+id, // Replace with your server endpoint
+            method: 'PATCH',
+            data: JSON.stringify({id:id}),
+            headers: {'X-CSRFToken': csrftoken},
+            contentType: 'application/json',
+            success: function(response) {
+                console.log(response)
+                if(response.status){
+                    $('#modal-fields').html(response.html);
+                    $('#AddEditModel').find('form').attr('action',response.action)
+                    $('#AddEditModel').modal('show')
+                }
+               
+            },
+            error: function(xhr) {
+                console.error('Error submitting form:', xhr.responseText);
+            }
+        });
+        $('#AddEditModel').modal('show')
+    }
 
     function openModal(){
         $('#modal-fields').html(`
-                
                 <div class="col-sm-6">
                     <div class="form-group">
                         <label for="name">Name</label>
@@ -275,7 +331,7 @@
 
     }
 
-    /*
+  
     $('#excel-post-form').submit(function(e){
         e.preventDefault();
         const formData = new FormData(this);

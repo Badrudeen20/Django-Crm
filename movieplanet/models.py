@@ -17,6 +17,7 @@ class Posts(models.Model):
     story = models.TextField()
     link = models.CharField(max_length=100)
     type = models.IntegerField(choices=FILE_TYPE_CHOICES, default=1)
+    duration=models.TextField(null=True, blank=True)
     more = models.TextField()
     parent = models.TextField(null=True, blank=True)
     status = models.CharField(max_length=100)
