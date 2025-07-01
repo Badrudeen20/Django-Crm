@@ -7,7 +7,9 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.css" />
 
 <div class="container mt-2">
-    <div class="action"></div>
+    <div class="action">
+        {{action.add|safe }}
+    </div>
     <div class="row">
         <div class="col-12">
             <table id="customer_table"  class="display table" style="width:100%">
@@ -147,9 +149,9 @@ function loadData(){
                 }),
             }).then ( function( json, textStatus, jqXHR ) {
                 console.log(json)
-                if(json.success){
-                    $('.action').html(json.action.add)
-                }
+                // if(json.success){
+                //     $('.action').html(json.action.add)
+                // }
                 callback(json);
             });
         },

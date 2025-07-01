@@ -17,11 +17,16 @@ urlpatterns=[
   ##### Admin ########
   path('admin/dashboard',views.dashboard,name='dashboard'),
   path('admin/website/trand',views.trand),
-  path('admin/website/menu',views.menu,name="menu"),
-  path('admin/website/menu/<int:parentId>',views.menu),
-  # path('admin/website/menu-addedit/<int:parentId>',views.menuAddEdit),
+
+  path('admin/website/menus',views.menu,name="menus"),
+  path('admin/website/menus/<int:parentId>',views.menu),
+  path('admin/website/menu/<str:menuId>',views.menu),
+  path('admin/website/menu/<str:menuId>/<str:parentId>',views.menu),
+
   path('admin/website/posts',views.posts,name="posts"),
-  path('admin/website/posts/<str:parentId>',views.posts),
+  path('admin/website/posts/<str:parentId>',views.posts,name="posts"),
+  path('admin/website/post/<str:postId>',views.posts,name="post"),
+  path('admin/website/post/<str:postId>/<str:parentId>',views.posts,name="post"),
   # path('admin/website/post',views.post),
   # path('admin/website/post/<str:postId>',views.post),
   # path('admin/website/excelPost',views.excelPost,name="excelPost"),

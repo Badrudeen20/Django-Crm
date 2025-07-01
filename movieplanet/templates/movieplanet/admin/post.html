@@ -5,6 +5,7 @@
 {% block content %}
 <div class="container d-flex justify-content-center">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.css" />
+<link rel="stylesheet" type="text/css" href="https://common.olemiss.edu/_js/sweet-alert/sweet-alert.css">
 <!-- <style>
     @media (min-width: 576px) {
     .modal-dialog {
@@ -112,6 +113,8 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.js"></script>
+<script src="https://common.olemiss.edu/_js/sweet-alert/sweet-alert.min.js"></script>
+
 <script>
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
     $(document).ready( function () {
@@ -166,34 +169,48 @@
    
 
     function deleteModal(id){
-        $('#deleteModal').modal('show')
-        $("#deleteModal").find('button[type=submit]').attr('onclick',"deleteItem("+id+")")
-    }
+        // $('#deleteModal').modal('show')
+        // $("#deleteModal").find('button[type=submit]').attr('onclick',"deleteItem("+id+")")
+        swal({
+            title: "Are you sure?",
+            text: "You will not be able to recover this file!",
+            type: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#DD6B55",
+            confirmButtonText: "Yes, delete it!",
+            cancelButtonText: "No, cancel plx!",
+            closeOnConfirm: false,
+            closeOnCancel: false
+        },function(isConfirm){
+            if (isConfirm) {
+                $.ajax({
+                    url: '{{ settings.BASE_URL }}', // Replace with your server endpoint
+                    method: 'PATCH',
+                    data: JSON.stringify({id:id}),
+                    headers: {'X-CSRFToken': csrftoken},
+                    contentType: 'application/json',
+                    success: function(response) {
+                        console.log(response)
+                        if(response.status){
+                            $('table.display').DataTable().clear().destroy();
+                            loadData()
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error('Error submitting form:', xhr.responseText);
+                    }
+                }); 
+                //swal("Deleted!", "Your imaginary file has been deleted.", "success");
 
-    function deleteItem(id){
-        $.ajax({
-            url: '{{ settings.BASE_URL }}', // Replace with your server endpoint
-            method: 'PATCH',
-            data: JSON.stringify({id:id}),
-            headers: {'X-CSRFToken': csrftoken},
-            contentType: 'application/json',
-            success: function(response) {
-                console.log(response)
-                $('#deleteModal').modal('hide')
-                if(response.status){
-                    $('table.display').DataTable().clear().destroy();
-                    loadData()
-                }
-                
-
-            },
-            error: function(xhr) {
-                console.error('Error submitting form:', xhr.responseText);
+            } else {
+                //swal("Cancelled", "Your imaginary file is safe :)", "error");
             }
-        });  
+            swal.close();
+        });
     }
-    /*
 
+
+    /*
     $('#post-form').submit(function(e){
         e.preventDefault();
         // let formData = $(this).serialize()

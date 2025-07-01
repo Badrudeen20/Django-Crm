@@ -153,26 +153,37 @@ def checkParent(role,module,mid):
       
       return allow
 
-
 @permission_required('Menu') 
 def menu(request,*args,**kwargs):
     if 'Menu' in kwargs.get('module') and kwargs.get('access'):
+      parentId = kwargs.get('parentId', None)
+      menuId = kwargs.get('menuId', None)
+      action = {}
       if request.method == 'POST' and 'View' in kwargs.get('permission'):
-            parentId = kwargs.get('parentId', None)
-            if parentId and 'Edit' in kwargs.get('permission'):
-                  menu = Menu.objects.using('movieplanet').get(id=parentId)
-                  menu.name = request.POST['menu']
-                  menu.link = request.POST['link']
-                  menu.save()
-            elif parentId is None and 'Add' in kwargs.get('permission'):
+            if menuId =='create' and 'Add' in kwargs.get('permission'):
                   Menu.objects.using('movieplanet').create(
                    name=request.POST['menu'], 
                    link=request.POST['link'],
-                   type=request.POST['type']
+                   type=request.POST['type'],
+                   menuId=parentId
                   )
-            previous_url = request.META.get('HTTP_REFERER', '/')
-            return redirect(previous_url)
-      elif request.method == 'PUT' and 'Edit' in kwargs.get('permission'):
+                  return HttpResponseRedirect(reverse('movieplanet:menus')) 
+            elif int(menuId) and 'Edit' in kwargs.get('permission'):
+                  if parentId:
+                     update = Menu.objects.using('movieplanet').filter(menuId=parentId,id=menuId).first()
+                  else:
+                     update = Menu.objects.using('movieplanet').filter(id=menuId).first()
+                  if update:
+                        update.name = request.POST['menu']
+                        update.link = request.POST['link']
+                        update.save()
+                        if parentId:
+                           return HttpResponseRedirect(reverse('movieplanet:menu', args=[menuId, parentId]))
+                        return HttpResponseRedirect(reverse('movieplanet:menu', args=[menuId]))
+            return HttpResponseRedirect(reverse('movieplanet:menus'))  
+            # previous_url = request.META.get('HTTP_REFERER', '/')
+            # return redirect(previous_url)
+      elif request.method == 'PUT' and 'View' in kwargs.get('permission'):
             data = json.loads(request.body)
             parentId = kwargs.get('parentId', None)
             # start = request.POST['start']
@@ -191,20 +202,20 @@ def menu(request,*args,**kwargs):
                   data = Menu.objects.using('movieplanet').filter(Q(menuId=parentId))[startIndex:endIndex]
                   totalLen = Menu.objects.using('movieplanet').filter(Q(menuId=parentId)).count()
 
-            action = {}
-            if 'Add' in kwargs.get('permission'):
-               action['add'] = f'<button class="btn btn-primary" onclick="addModal()">Add</button>'
 
             for i in data:
                   action_btn = ''
                   if 'Edit' in kwargs.get('permission'):
-                      action_btn += f'<button class="btn btn-primary" onclick="editModal({i.id})">Edit</button>' 
+                      if parentId:
+                        action_btn += f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/menu/{i.id}/{parentId}">Edit</a>' 
+                      else:
+                        action_btn += f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/menu/{i.id}">Edit</a>'   
                   if 'Delete' in kwargs.get('permission'):
                       action_btn += f'<a class="btn btn-danger" href="{settings.BASE_URL}movieplanet/admin/website/menu/{i.id}">Delete</a>' 
             
                   permission = {
                   "id":i.id,
-                  "name":(f'<a href="{settings.BASE_URL}movieplanet/admin/website/menu/{i.id}">{i.name}</a>'),
+                  "name":(f'<a href="{settings.BASE_URL}movieplanet/admin/website/menus/{i.id}">{i.name}</a>'),
                   "action":action_btn
                   }
                   listData.append(permission)
@@ -234,15 +245,36 @@ def menu(request,*args,**kwargs):
             'action':settings.BASE_URL+f"movieplanet/admin/website/menu/{data.get('id')}"
             }, status=200)   
       else:
-            if 'Delete' in kwargs.get('permission'):
-                parentId = kwargs.get('parentId', None)
-                if parentId:
-                   obj = Menu.objects.using('movieplanet').get(id=parentId)
-                   obj.delete()
-                   return HttpResponseRedirect(reverse('movieplanet:menu'))    
+
+            if 'Add' in kwargs.get('permission'):
+               action['add'] = f'<a class="btn btn-primary"  href="{settings.BASE_URL}movieplanet/admin/website/menu/create">Add</a>'
+
+            if 'Add' in kwargs.get('permission'):
+               if parentId:
+                  action['add'] = f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/menu/create/{parentId}">Add</a>'
+               else:
+                  action['add'] = f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/menu/create">Add</a>'
+           
+            if menuId=='create':
+               if parentId and Menu.objects.using('movieplanet').filter(id=parentId,type=2).exists():
+                  return render(request,"movieplanet/admin/menuedit.html") 
+               elif parentId is None:
+                  return render(request,"movieplanet/admin/menuedit.html")  
+               else:
+                  return HttpResponseRedirect(reverse('movieplanet:posts')) 
+            elif menuId and 'Edit' in kwargs.get('permission'):
+               if parentId:
+                  menu = Menu.objects.using('movieplanet').filter(id=menuId,menuId=parentId).values().first()
+               else:
+                  menu = Menu.objects.using('movieplanet').filter(id=menuId).values().first()
+               if menu:
+                  return render(request,"movieplanet/admin/menuedit.html",{"menu":menu})
+               else:
+                  return HttpResponseRedirect(reverse('movieplanet:menus')) 
+
+            return render(request,"movieplanet/admin/menu.html",{"action":action})
 
 
-            return render(request,"movieplanet/admin/menu.html")
     else:
       return render(request,"movieplanet/404.html")   
 
@@ -253,24 +285,22 @@ def menuFind(menus, pid):
             result.append(m) 
     return result
 
-
-   
-
-
 @permission_required('Posts') 
 def posts(request,*args,**kwargs):
     
     if 'Posts' in kwargs.get('module') and kwargs.get('access'):
       parentId = kwargs.get('parentId', None)
+      postId = kwargs.get('postId', None)
       action = {}
       if request.method == 'POST' and 'View' in kwargs.get('permission'):
-            if parentId and parentId=='create' and 'Add' in kwargs.get('permission'):
+            if postId=='create' and 'Add' in kwargs.get('permission'):
                   post = request.POST
                   Posts.objects.using('movieplanet').create(
                         name=post.get('name', ''),
                         image=post.get('image', ''),
                         rate=post.get('rate', ''),
                         size=post.get('size', ''),
+                        type=post.get('type', ''),
                         genre=post.get('genre', ''),
                         lang=post.get('lang', ''),
                         status=post.get('status', ''),
@@ -278,29 +308,37 @@ def posts(request,*args,**kwargs):
                         story=post.get('story', ''),
                         link=post.get('link', ''),
                         menu=post.get('menu', ''),
+                        parent=parentId,
                         duration=post.get('duration', ''),
                         release_date=post.get('release_date', '')
                   )
                   return HttpResponseRedirect(reverse('movieplanet:posts')) 
-            elif parentId and 'Edit' in kwargs.get('permission'):
+            elif int(postId) and 'Edit' in kwargs.get('permission'):
                   post = request.POST
-                  update = Posts.objects.using('movieplanet').filter(id=parentId).first()
-                  update.image = post.get('image', '')
-                  update.rate = post.get('rate', '')
-                  update.size = post.get('size', '')
-                  update.genre = post.get('genre', '')
-                  update.lang = post.get('lang', '')
-                  update.status = post.get('status', '')
-                  update.starcast = post.get('starcast', '')
-                  update.story = post.get('story', '')
-                  update.link = post.get('link', '')
-                  update.menu = post.get('menu', '')
-                  update.duration=post.get('duration', '')
-                  update.release_date = post.get('release_date', '')
-                  update.save()
-              
-            previous_url = request.META.get('HTTP_REFERER', '/')
-            return redirect(previous_url)
+                  if parentId:
+                     update = Posts.objects.using('movieplanet').filter(parent=parentId,id=postId).first()
+                  else:
+                     update = Posts.objects.using('movieplanet').filter(id=postId).first()
+                  if update:
+                        update.image = post.get('image', '')
+                        update.rate = post.get('rate', '')
+                        update.size = post.get('size', '')
+                        update.genre = post.get('genre', '')
+                        update.lang = post.get('lang', '')
+                        update.status = post.get('status', '')
+                        update.starcast = post.get('starcast', '')
+                        update.story = post.get('story', '')
+                        update.link = post.get('link', '')
+                        update.menu = post.get('menu', '')
+                        update.duration=post.get('duration', '')
+                        update.release_date = post.get('release_date', '')
+                        update.save()
+                        if parentId:
+                           return HttpResponseRedirect(reverse('movieplanet:post', args=[postId, parentId]))
+                        return HttpResponseRedirect(reverse('movieplanet:post', args=[postId]))
+            return HttpResponseRedirect(reverse('movieplanet:posts'))             
+            # previous_url = request.META.get('HTTP_REFERER', '/')
+            # return redirect(previous_url)
       elif request.method == 'PUT' and 'View' in kwargs.get('permission'):
             data = json.loads(request.body)
             # start = request.POST['start']
@@ -324,8 +362,10 @@ def posts(request,*args,**kwargs):
             for i in data:
                   btn =''
                   if 'Edit' in kwargs.get('permission'):
-                     btn += f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/posts/{i.id}" >Edit</a>'
-                     # btn += f'<a class="btn btn-primary" onclick="editModal({i.id})">Edit</a>'
+                     if parentId:
+                        btn += f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/post/{i.id}/{parentId}" >Edit</a>'
+                     else:
+                        btn += f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/post/{i.id}" >Edit</a>'  
                   if 'Delete' in kwargs.get('permission'):
                      btn += f'<button class="btn btn-danger" onclick="deleteModal({i.id})">Delete</button>'
                   
@@ -342,9 +382,6 @@ def posts(request,*args,**kwargs):
                         
                   listData.append(post)
             
-            # if 'Add' in kwargs.get('permission'):
-            #    action['add'] = f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/post">Add</a>'
-
             return JsonResponse({
                   "success": True,
                   "iTotalRecords":totalLen,
@@ -354,31 +391,46 @@ def posts(request,*args,**kwargs):
             }, status=200)
       elif request.method == 'PATCH' and 'Delete' in kwargs.get('permission'):
             data = json.loads(request.body)
-            obj = Posts.objects.using('movieplanet').get(id=data.get('id'))
-            obj.delete()
+            Posts.objects.using('movieplanet').get(id=data.get('id')).delete()
+            Posts.objects.using('movieplanet').get(parent=data.get('id')).delete()
             return JsonResponse({
                   "status": True,
                   "msg":"Item delete successfully!"
             }, status=200)
       else:
             if 'Add' in kwargs.get('permission'):
-               action['add'] = f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/posts/create">Add</a>'
-            
-            if parentId and parentId=='create':
-               return render(request,"movieplanet/admin/postedit.html")  
-            elif parentId and 'Edit' in kwargs.get('permission'):
-               post = Posts.objects.using('movieplanet').filter(id=parentId).values().first()
-               return render(request,"movieplanet/admin/postedit.html",{"post":post})
+               if parentId:
+                  action['add'] = f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/post/create/{parentId}">Add</a>'
+               else:
+                  action['add'] = f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/post/create">Add</a>'
+            if postId=='create':
+               if parentId and Posts.objects.using('movieplanet').filter(id=parentId,type=2).exists():
+                  return render(request,"movieplanet/admin/postedit.html") 
+               elif parentId is None:
+                  return render(request,"movieplanet/admin/postedit.html")  
+               else:
+                  return HttpResponseRedirect(reverse('movieplanet:posts')) 
+            elif postId and 'Edit' in kwargs.get('permission'):
+               if parentId:
+                  post = Posts.objects.using('movieplanet').filter(id=postId,parent=parentId).values().first()
+               else:
+                  post = Posts.objects.using('movieplanet').filter(id=postId).values().first()
+               if post:
+                  return render(request,"movieplanet/admin/postedit.html",{"post":post})
+               else:
+                  return HttpResponseRedirect(reverse('movieplanet:posts')) 
             return render(request,"movieplanet/admin/post.html",{"action":action})
     else:
       return render(request,"movieplanet/404.html")  
 
 
 
-
 @permission_required('Trand') 
 def trand(request,*args,**kwargs):
     if 'Trand' in kwargs.get('module') and kwargs.get('access'):
+      parentId = kwargs.get('parentId', None)
+      trandId = kwargs.get('trandId', None)
+      action = {}
       if request.method == 'POST' and 'View' in kwargs.get('permission'):
          pass
       elif request.method == 'PUT' and 'View' in kwargs.get('permission'):
@@ -399,12 +451,12 @@ def trand(request,*args,**kwargs):
             else:
                   data = Trand.objects.using('movieplanet').select_related('post').filter(status=1)[startIndex:endIndex]
                   totalLen = Trand.objects.using('movieplanet').select_related('post').filter(status=1).count()
-            
+
             listData = []
             for i in data:
                   btn =''
                   if 'Edit' in kwargs.get('permission'):
-                     btn += f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/post/{i.id}" >Edit</a>'
+                     btn += f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/trand/{i.id}" >Edit</a>'
                   if 'Delete' in kwargs.get('permission'):
                      btn += f'<button class="btn btn-danger">Delete</button>'
                   
@@ -421,8 +473,6 @@ def trand(request,*args,**kwargs):
                         
                   listData.append(post)
             action = {}
-            if 'Add' in kwargs.get('permission'):
-               action['add'] = f'<button class="btn btn-primary" onclick="addModal()">Add</button>'
 
             return JsonResponse({
                   "success": True,
@@ -432,7 +482,24 @@ def trand(request,*args,**kwargs):
                   "action":action
             }, status=200)    
       else:
-            return render(request,"movieplanet/admin/trand.html")
+            if 'Add' in kwargs.get('permission'):
+               if parentId:
+                  action['add'] = f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/trand/create/{parentId}">Add</a>'
+               else:
+                  action['add'] = f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/trand/create">Add</a>'
+            if trandId=='create':
+               if parentId is None:
+                  return render(request,"movieplanet/admin/trandedit.html")  
+               else:
+                  return HttpResponseRedirect(reverse('movieplanet:posts')) 
+            elif trandId and 'Edit' in kwargs.get('permission'):
+               post = Posts.objects.using('movieplanet').filter(id=trandId).values().first()
+               if post:
+                  return render(request,"movieplanet/admin/trandedit.html",{"post":post})
+               else:
+                  return HttpResponseRedirect(reverse('movieplanet:trands')) 
+            return render(request,"movieplanet/admin/trand.html",{"action":action})
+
     else:
       return render(request,"movieplanet/404.html")  
     

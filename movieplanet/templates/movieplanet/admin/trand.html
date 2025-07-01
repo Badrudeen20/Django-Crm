@@ -101,9 +101,9 @@
                     }),
                 }).then ( function( json, textStatus, jqXHR ) {
                     console.log(json)
-                    if(json.success){
-                        $('.action').html(json.action.add)
-                    }
+                    // if(json.success){
+                    //     $('.action').html(json.action.add)
+                    // }
                     callback(json);
                 });
             },
