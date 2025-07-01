@@ -16,12 +16,13 @@ urlpatterns=[
  
   ##### Admin ########
   path('admin/dashboard',views.dashboard,name='dashboard'),
-  path('admin/website/trand',views.trand),
+  path('admin/website/trands',views.trand,name="trands"),
+   path('admin/website/trand/<str:trandId>',views.trand,name="trand"),
 
   path('admin/website/menus',views.menu,name="menus"),
-  path('admin/website/menus/<int:parentId>',views.menu),
-  path('admin/website/menu/<str:menuId>',views.menu),
-  path('admin/website/menu/<str:menuId>/<str:parentId>',views.menu),
+  path('admin/website/menus/<int:parentId>',views.menu,name="menus"),
+  path('admin/website/menu/<str:menuId>',views.menu,name="menu"),
+  path('admin/website/menu/<str:menuId>/<str:parentId>',views.menu,name="menu"),
 
   path('admin/website/posts',views.posts,name="posts"),
   path('admin/website/posts/<str:parentId>',views.posts,name="posts"),

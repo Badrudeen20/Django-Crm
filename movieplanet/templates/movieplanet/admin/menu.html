@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container d-flex justify-content-center">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.css" />
-
+<link rel="stylesheet" type="text/css" href="https://common.olemiss.edu/_js/sweet-alert/sweet-alert.css">
 <div class="container mt-2">
     <div class="action">
         {{action.add|safe }}
@@ -95,74 +95,117 @@
 
 <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script> -->
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.js"></script>
+<script src="https://common.olemiss.edu/_js/sweet-alert/sweet-alert.min.js"></script>
 <script>
-const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-$(document).ready( function () {
-    loadData()
-})
+    $(document).ready( function () {
+        loadData()
+    })
 
-function editModal(id){
-    $.ajax({
-        url: "{{ settings.BASE_URL }}",
-        method:"PATCH",
-        headers: {'X-CSRFToken': csrftoken},
-        contentType: 'application/json',
-        data:JSON.stringify({id:id})
-    }).then ( function( json, textStatus, jqXHR ) {
-        if(json.status){
-           $('#edit-form').html(json.html);
-           $('#EditModel').find('form').attr('action',json.action)
-           $('#EditModel').modal('show')
-        }
+    function editModal(id){
+        $.ajax({
+            url: "{{ settings.BASE_URL }}",
+            method:"PATCH",
+            headers: {'X-CSRFToken': csrftoken},
+            contentType: 'application/json',
+            data:JSON.stringify({id:id})
+        }).then ( function( json, textStatus, jqXHR ) {
+            if(json.status){
+            $('#edit-form').html(json.html);
+            $('#EditModel').find('form').attr('action',json.action)
+            $('#EditModel').modal('show')
+            }
 
-    });
+        });
 
-}
+    }
 
-function addModal(id){
-    $('#AddModel').modal('show')
-}
+    // function addModal(id){
+    //     $('#AddModel').modal('show')
+    // }
 
-function loadData(){
-    var pgno = 0;
-    $('table.display').DataTable({
-        "processing" : true,
-        "serverSide" : true,
-        pageLength : 4,
-        ajax: function (data, callback, settings) {
-            var api = this.api();
-            var search = api.search() 
-            var pageInfo = api.page.info();
-            pgno = pageInfo.page+1;
+    function loadData(){
+        var pgno = 0;
+        $('table.display').DataTable({
+            "processing" : true,
+            "serverSide" : true,
+            pageLength : 4,
+            ajax: function (data, callback, settings) {
+                var api = this.api();
+                var search = api.search() 
+                var pageInfo = api.page.info();
+                pgno = pageInfo.page+1;
+                
+                $.ajax({
+                    url: "{{ settings.BASE_URL }}",
+                    method:"PUT",
+                    headers: {'X-CSRFToken': csrftoken},
+                    // data:{start:pgno, length:4,search:search,type:'View'}
+                    data: JSON.stringify({
+                        start: pgno,
+                        length: 4,
+                        search: search,
+                        type: 'View'
+                    }),
+                }).then ( function( json, textStatus, jqXHR ) {
+                    console.log(json)
+                    // if(json.success){
+                    //     $('.action').html(json.action.add)
+                    // }
+                    callback(json);
+                });
+            },
+            columns: [
+                { data: "id" },
+                { data: "name" },
+                { data: "action" },
+            ],
             
-            $.ajax({
-                url: "{{ settings.BASE_URL }}",
-                method:"PUT",
-                headers: {'X-CSRFToken': csrftoken},
-                // data:{start:pgno, length:4,search:search,type:'View'}
-                data: JSON.stringify({
-                    start: pgno,
-                    length: 4,
-                    search: search,
-                    type: 'View'
-                }),
-            }).then ( function( json, textStatus, jqXHR ) {
-                console.log(json)
-                // if(json.success){
-                //     $('.action').html(json.action.add)
-                // }
-                callback(json);
-            });
-        },
-        columns: [
-            { data: "id" },
-            { data: "name" },
-            { data: "action" },
-        ],
-        
-    });
-}
+        });
+    }
+
+    function deleteModal(id){
+        // $('#deleteModal').modal('show')
+        // $("#deleteModal").find('button[type=submit]').attr('onclick',"deleteItem("+id+")")
+        swal({
+            title: "Are you sure?",
+            text: "You will not be able to recover this file!",
+            type: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#DD6B55",
+            confirmButtonText: "Yes, delete it!",
+            cancelButtonText: "No, cancel plx!",
+            closeOnConfirm: false,
+            closeOnCancel: false
+        },function(isConfirm){
+            if (isConfirm) {
+                $.ajax({
+                    url: '{{ settings.BASE_URL }}', // Replace with your server endpoint
+                    method: 'PATCH',
+                    data: JSON.stringify({id:id}),
+                    headers: {'X-CSRFToken': csrftoken},
+                    contentType: 'application/json',
+                    success: function(response) {
+                        console.log(response)
+                        if(response.status){
+                            $('table.display').DataTable().clear().destroy();
+                            loadData()
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error('Error submitting form:', xhr.responseText);
+                    }
+                }); 
+                //swal("Deleted!", "Your imaginary file has been deleted.", "success");
+
+            } else {
+                //swal("Cancelled", "Your imaginary file is safe :)", "error");
+            }
+            swal.close();
+        });
+    }
+
 </script>
 
 {% endblock %}
