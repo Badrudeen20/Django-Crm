@@ -30,6 +30,114 @@ def dashboard(request):
 @permission_required('Permission')
 def permission(request,*args,**kwargs):
    if 'Permission' in kwargs.get('module') and kwargs.get('access'):
+      roleId = kwargs.get('role', '')
+      module = Module.objects.using('movieplanet').all()
+      if request.method == 'POST' and 'View' in kwargs.get('permission'):
+            if roleId and 'Edit' in kwargs.get('permission'):
+                for m in module:
+                    perm = Permission.objects.using('movieplanet').filter(modules_id=m.id,role_id=roleId).first()
+                    if m.parent_id=='':
+                        if perm:
+                              if m.module in request.POST:
+                                perm.permission =  request.POST[m.module]
+                                perm.save()
+                              else:
+                                perm.delete()
+                        else:
+                              if m.module in request.POST:
+                                 Permission.objects.using('movieplanet').create(
+                                    permission=request.POST[m.module],
+                                    role_id = roleId,
+                                    modules_id = m.id
+                                 )
+                    else:
+                        if m.parent_id:
+                              permission = ''
+                              if m.module+'[view]' in request.POST:
+                                    permission += request.POST[m.module+'[view]']
+                              if m.module+'[add]' in request.POST:
+                                    permission +=','+request.POST[m.module+'[add]']
+                              if m.module+'[edit]' in request.POST:
+                                    permission +=','+request.POST[m.module+'[edit]']
+                              if m.module+'[delete]' in request.POST:
+                                    permission +=','+request.POST[m.module+'[delete]']
+                                       
+                              if perm:
+                                    if permission:
+                                       perm.permission =  permission
+                                       perm.save()
+                                    else:
+                                       perm.delete()  
+                              else:
+                                  if permission:
+                                     Permission.objects.using('movieplanet').create(
+                                          permission=permission,
+                                          role_id = roleId,
+                                          modules_id = m.id,
+                                          module_parent_id=m.parent_id
+                                     )
+                                   
+                return HttpResponseRedirect(reverse('movieplanet:permission', args=[roleId]))       
+            return redirect(reverse('movieplanet:permissions'))
+      
+      elif request.method == 'PUT' and request.headers.get('x-requested-with') == 'XMLHttpRequest' and 'View' in kwargs.get('permission'):
+            data = json.loads(request.body)
+            # start = request.POST['start']
+            # length = request.POST['length']
+            # search = request.POST['search']
+            start = int(data.get('start', 1))
+            length = int(data.get('length', 10))
+            search = data.get('search', '')
+            startIndex = (int(start)-1) * int(length)
+            endIndex = startIndex + int(length)
+            listData = []
+            roles = kwargs.get('roleIds')
+            if search :
+                  data = Role.objects.using('movieplanet').filter(name__icontains=search,id__in=roles)[startIndex:endIndex].all()
+                  totalLen = list(Role.objects.using('movieplanet').filter(name__icontains=search,id__in=roles).all())
+            else:
+                  data = Role.objects.using('movieplanet').filter(id__in=roles)[startIndex:endIndex].all()
+                  totalLen = list(Role.objects.using('movieplanet').filter(id__in=roles).all())
+
+            for i in data:
+                  permission = {
+                  "id":i.id,
+                  "roleName":i.name,
+                  "action":(f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/administration/permission/{i.id}" >Permission</a>')
+                  }
+                  listData.append(permission)
+
+            return JsonResponse({
+                  "success": True,
+                  "iTotalRecords":len(totalLen),
+                  "iTotalDisplayRecords":len(totalLen),
+                  "aaData":listData
+            }, status=200)   
+      else:
+            if roleId and 'Edit' in kwargs.get('permission'):
+                  allow = '<ul class="list-group">'
+                  for m in module:
+                        perm = Permission.objects.using('movieplanet').filter(modules_id=m.id,role_id=roleId).first()
+                        if m.parent_id=='':
+                              allow +=(f'<li class="list-group-item ">'
+                                          f'<div class="w-100 d-flex justify-content-between">'
+                                          f'<div>{m.module}</div>'
+                                          f'<div>View <input type="checkbox" name="{m.module}" value="View" {"checked" if perm else None} class="form-check-input" /> </div>'
+                                          f'</div>'
+                                          f'{checkParent(roleId,module,m.id)}'
+                                          f'</li>')   
+                  
+                  allow +='</ul>'
+                  return render(request,"movieplanet/admin/allowpermission.html",{'permissions':allow})
+            
+            return render(request,"movieplanet/admin/permission.html")
+   else:
+      return render(request,"movieplanet/404.html")  
+   
+
+@permission_required('Permission')
+def permission1(request,*args,**kwargs):
+   if 'Permission' in kwargs.get('module') and kwargs.get('access'):
       role = kwargs.get('role', '')
       if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest' and 'View' in kwargs.get('permission'):
             start = request.POST['start']
@@ -186,9 +294,6 @@ def menu(request,*args,**kwargs):
       elif request.method == 'PUT' and 'View' in kwargs.get('permission'):
             data = json.loads(request.body)
             parentId = kwargs.get('parentId', None)
-            # start = request.POST['start']
-            # length = request.POST['length']
-            # search = request.POST['search']
             start = int(data.get('start', 1))
             length = int(data.get('length', 10))
             search = data.get('search', '')
@@ -347,12 +452,12 @@ def posts(request,*args,**kwargs):
             endIndex = startIndex + int(length)
             
             if search :
-                  data = Posts.objects.using('movieplanet').filter(Q(parent=parentId),name__icontains=search,status=1)[startIndex:endIndex].all()
-                  totalLen = Posts.objects.using('movieplanet').filter(Q(parent=parentId),name__icontains=search,status=1).count()
+                  data = Posts.objects.using('movieplanet').filter(Q(parent=parentId),name__icontains=search)[startIndex:endIndex].all()
+                  totalLen = Posts.objects.using('movieplanet').filter(Q(parent=parentId),name__icontains=search).count()
             
             else:
-                  data = Posts.objects.using('movieplanet').filter(Q(parent=parentId),status=1).all()[startIndex:endIndex]
-                  totalLen = Posts.objects.using('movieplanet').filter(Q(parent=parentId),status=1).count()
+                  data = Posts.objects.using('movieplanet').filter(Q(parent=parentId)).all()[startIndex:endIndex]
+                  totalLen = Posts.objects.using('movieplanet').filter(Q(parent=parentId)).count()
             
             listData = []
             for i in data:
@@ -417,7 +522,6 @@ def posts(request,*args,**kwargs):
             return render(request,"movieplanet/admin/post.html",{"action":action})
     else:
       return render(request,"movieplanet/404.html")  
-
 
 
 @permission_required('Trand') 

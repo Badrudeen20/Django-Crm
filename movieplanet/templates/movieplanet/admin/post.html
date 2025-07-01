@@ -125,7 +125,7 @@
         $('table.display').DataTable({
             "processing" : true,
 			"serverSide" : true,
-            pageLength : 4,
+            pageLength : 25,
             // scrollX: true,
             // scrollCollapse: true,
             // autoWidth: false,
@@ -142,7 +142,7 @@
                     //data:{start:pgno, length:4,search:search,type:'View'}
                     data: JSON.stringify({
                         start: pgno,
-                        length: 4,
+                        length: 25,
                         search: search,
                         type: 'View'
                     }),

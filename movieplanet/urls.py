@@ -32,8 +32,8 @@ urlpatterns=[
   # path('admin/website/post/<str:postId>',views.post),
   # path('admin/website/excelPost',views.excelPost,name="excelPost"),
   path('admin/sidebar',views.sidebarList,name="sidebar"),
-  path('admin/administration/permission/',views.permission,name="movieplanet-permission"),
-  path('admin/administration/permission/<int:role>',views.permission),
+  path('admin/administration/permissions/',views.permission,name="permissions"),
+  path('admin/administration/permission/<int:role>',views.permission,name="permission"),
   path('admin/administration/users',views.customers),
   path('admin/setting/chat',views.chat),
  

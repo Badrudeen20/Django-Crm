@@ -130,7 +130,7 @@
         $('table.display').DataTable({
             "processing" : true,
             "serverSide" : true,
-            pageLength : 4,
+            pageLength : 25,
             ajax: function (data, callback, settings) {
                 var api = this.api();
                 var search = api.search() 
@@ -144,15 +144,12 @@
                     // data:{start:pgno, length:4,search:search,type:'View'}
                     data: JSON.stringify({
                         start: pgno,
-                        length: 4,
+                        length: 25,
                         search: search,
                         type: 'View'
                     }),
                 }).then ( function( json, textStatus, jqXHR ) {
                     console.log(json)
-                    // if(json.success){
-                    //     $('.action').html(json.action.add)
-                    // }
                     callback(json);
                 });
             },

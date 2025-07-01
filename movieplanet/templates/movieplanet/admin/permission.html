@@ -75,9 +75,9 @@ function loadData(){
                 
                 $.ajax({
                     url: "{{ settings.BASE_URL }}",
-                    method:"POST",
+                    method:"PUT",
                     headers: {'X-CSRFToken': csrftoken},
-                    data:{start:pgno, length:8,search:search,type:'View'}
+                    data:JSON.stringify({start:pgno, length:8,search:search,type:'View'})
                 }).then ( function( json, textStatus, jqXHR ) {
                      callback(json);
                      console.log(json)
@@ -88,9 +88,6 @@ function loadData(){
             columns: [
                 { data: "id" },
                 { data: "roleName" },
-                //{ data: "moduleName" },
-                // { data: "permission" },
-                // { data: "codename" },
                 { data: "action" },
                 
             ],
