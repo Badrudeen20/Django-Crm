@@ -186,8 +186,9 @@
                     success: function(response) {
                         console.log(response)
                         if(response.status){
-                            $('table.display').DataTable().clear().destroy();
-                            loadData()
+                            // $('table.display').DataTable().clear().destroy();
+                            // loadData()
+                            $('table.display').DataTable().ajax.reload();
                         }
                     },
                     error: function(xhr) {

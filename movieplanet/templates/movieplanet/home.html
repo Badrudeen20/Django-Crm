@@ -107,39 +107,7 @@
     $(document).ready( function () {
       
       loadData()
-      /*
-      let trands = ''
-      let url = baseUrl+"/detail/"
-      {% for t in Trands %}
-      trands+=`<div class="col-md-6 col-sm-12 col-lg-12">
-                <div class="card float-left my-2">
-                  <div class="row ">`
-
-              {% if forloop.counter|divisibleby:2 %}
-              trands+=`<div class="col-7 ">
-                        <div class="card-block">                          
-                          <a class="card-text" href="${url+"{{t.post.name}}".split(' ').join('+')}">{{t.post.name}}</a>
-                        </div>
-                      </div>
-                      <div class="col-5">
-                        <img class="d-block w-100" src="{{t.post.image}}" alt="">
-                      </div>`
-              {% else %}
-              trands+=`<div class="col-5">
-                        <img class="d-block w-100" src="{{t.post.image}}" alt="">
-                      </div>
-                      <div class="col-7">
-                        <div class="card-block">
-                          <a class="card-text" href="${url+"{{t.post.name}}".split(' ').join('+')}">{{t.post.name}}</a>
-                        </div>
-                      </div>`
-              {% endif %}     
-            trands+=`</div>
-                  </div>
-                </div>`
-      {% endfor %}
-      $('#trands').html(trands)
-      */
+     
     })
     function loadData(){
       var pgno = 0;
@@ -150,7 +118,7 @@
             "processing" : true,
 		        "serverSide" : true,
             "lengthChange": false,
-            "pageLength" : 4,
+            "pageLength" : 20,
             "oSearch": {"sSearch": "{{request.GET.search}}" },
             "displayStart":("{{request.GET.page}}") ?(4*"{{request.GET.page}}")-4 : 0,
             "ordering": false,
@@ -178,8 +146,6 @@
                 pgno =  pageInfo.page+1;
                 let param = '?page='+pgno
 
-
-
                 if(search){
                   param +='&search='+search
                 }
@@ -198,7 +164,7 @@
                     url: "{{ settings.BASE_URL }}",
                     method:"POST",
                     headers: {'X-CSRFToken': csrftoken},
-                    data:{start:pgno, length:4,search:search}
+                    data:{start:pgno, length:20,search:search}
                 }).then ( function( json, textStatus, jqXHR ) {
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                     callback(json);
@@ -212,7 +178,6 @@
             ],
             initComplete: function () {
                 let genre = (genres) ? genres.split(',').map(item => item.trim()) : []
-                
                 let customBtn = `<div>
                                       <button class="btn btn-info dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                         Filter <i class="fa fa-filter me-1"></i> 

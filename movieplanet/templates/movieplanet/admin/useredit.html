@@ -1,0 +1,45 @@
+
+{% extends "movieplanet/layout/admin.html" %}
+
+
+{% block content %}
+<div class="container d-flex justify-content-center">
+
+<div class="container mt-2">
+
+    <form class="row" method="post">
+      {% csrf_token %}   
+            <div class="col-sm-12">
+                  <table class="table table-bordered">
+                        <thead>
+                              <tr>
+                                    <th scope="col">Id</th>
+                                    <th scope="col">Role</th>
+                                    <th scope="col">Permission</th>
+                                    <th scope="col">View</th>
+                              </tr>
+                        </thead>
+                        <tbody>
+                              {% for t in roles %}
+                                    <tr>
+                                          <th scope="row">1</th>
+                                          <td>{{t.role.name}}</td>
+                                          <td><input type="checkbox" name="{{t.role.name}}" {% if t.assign %}checked{% endif %} value="{{t.role_id}}" class="form-check-input" /></td>
+                                          <td><button class="btn btn-primary">View</button></td>
+                                    </tr>
+                              {% endfor %}
+                              
+                        </tbody>
+                  </table>
+
+            </div>
+           
+            <div class="col-sm-12">
+                  <div class="form-group mt-2">
+                        <button class="btn btn-primary" type="submit">Submit</button>
+                  </div>
+            </div>
+    </form>
+  
+</div>
+{% endblock %}

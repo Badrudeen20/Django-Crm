@@ -15,9 +15,9 @@ urlpatterns=[
   
  
   ##### Admin ########
-  path('admin/dashboard',views.dashboard,name='dashboard'),
-  path('admin/website/trands',views.trand,name="trands"),
-   path('admin/website/trand/<str:trandId>',views.trand,name="trand"),
+  # path('admin/dashboard',views.dashboard,name='dashboard'),
+  # path('admin/website/trands',views.trand,name="trands"),
+  # path('admin/website/trand/<str:trandId>',views.trand,name="trand"),
 
   path('admin/website/menus',views.menu,name="menus"),
   path('admin/website/menus/<int:parentId>',views.menu,name="menus"),
@@ -34,7 +34,11 @@ urlpatterns=[
   path('admin/sidebar',views.sidebarList,name="sidebar"),
   path('admin/administration/permissions/',views.permission,name="permissions"),
   path('admin/administration/permission/<int:role>',views.permission,name="permission"),
-  path('admin/administration/users',views.customers),
+
+  path('admin/administration/users',views.customers,name="users"),
+  path('admin/administration/user/<int:userId>',views.customers,name="user"),
+
+
   path('admin/setting/chat',views.chat),
  
 ]

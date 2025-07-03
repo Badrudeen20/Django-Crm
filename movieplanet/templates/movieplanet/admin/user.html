@@ -63,9 +63,6 @@
 <script>
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
     $(document).ready( function () {
-        // $('.mul-group').selectpicker();
-        // $(".group-select").select2({});
-        // $(".role-select").chosen(); 
         loadData()
     })
 
@@ -74,7 +71,7 @@
         $('table.display').DataTable({
             "processing" : true,
 			"serverSide" : true,
-            pageLength : 4,
+            pageLength : 25,
             ajax: function (data, callback, settings) {
                 var api = this.api();
                 var search = api.search() 
@@ -83,12 +80,11 @@
                 
                 $.ajax({
                     url: "{{ settings.BASE_URL }}",
-                    method:"POST",
+                    method:"PUT",
                     headers: {'X-CSRFToken': csrftoken},
-                    data:{start:pgno, length:4,search:search,type:'FETCH'}
+                    data:JSON.stringify({start:pgno, length:25,search:search})
                 }).then ( function( json, textStatus, jqXHR ) {
-                    // console.log(json)
-                    if(json.success){
+                    if(json.success1){
                         let html =`
                         <input type="hidden" name="customer"  />
                         <table class="table table-bordered">
@@ -112,9 +108,9 @@
                                     </tr>`
                         })
                         */
-                        html +=`</tbody>
-                        </table>`
-                        $('#role-field').html(html)
+                        // html +=`</tbody>
+                        // </table>`
+                        // $('#role-field').html(html)
                     }
                     callback(json);
                 });
@@ -130,24 +126,7 @@
          
         });
     }
-    /*
-    function openModal(role=[],userId){
-        
-        if(role.length){
-            $(`input[type=checkbox]`).prop('checked',false)
-            $(`input[name=customer]`).val(userId)
-            
-            role.forEach((ele)=>{
-              $(`input[name=${ele.role}]`).prop('checked',true)
-              if(ele.assign=="1"){
-                $(`input[name=assign${ele.role}]`).prop('checked',true)
-              }
-            })
-
-           $('#RoleModal').modal('show')
-        }
-    }
-    */
+    
     function openModal(role=[],userId){
         $(`input[name=customer]`).val(userId)
         let html = ''

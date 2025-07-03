@@ -6,26 +6,6 @@
 <div class="container d-flex justify-content-center">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.css" />
 <link rel="stylesheet" type="text/css" href="https://common.olemiss.edu/_js/sweet-alert/sweet-alert.css">
-<!-- <style>
-    @media (min-width: 576px) {
-    .modal-dialog {
-        max-width: 700px; /* Change width as needed */
-    }
-}
-
-@media (min-width: 768px) {
-    .modal-dialog {
-        max-width: 800px;
-    }
-}
-
-@media (min-width: 992px) {
-    .modal-dialog {
-        max-width: 900px;
-    }
-}
-</style> -->
-
 
 <div class="container mt-2">
     
@@ -37,7 +17,7 @@
             <table id="customer_table"  class="display " style="width:100%;">
                 <thead>
                     <tr>
-                        <th>Id</th>
+                        <th class="d-flex justify-content-between"><span>Id</span> <input type="checkbox" name="tickall" value="tick" /></th>
                         <th>Name</th>
                         <th>Image</th>
                         <th>Rate</th>
@@ -51,63 +31,6 @@
       </div>
   
 </div>
-
-
-<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModal" >
-    <div class="modal-dialog modal-dialog-centered" role="document">
-      <div class="modal-content">
-        {% csrf_token %}
-            <div class="modal-header">
-            <h5 class="modal-title" id="DelModelTitle">Modal Delete</h5>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body text-center">
-                <p>Are you sure! Do you want to delete.</p>
-            </div>
-            <div class="modal-footer">
-                <button type="submit" class="btn btn-primary" >Yes</button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
-            </div>
-      </div>
-    </div>
-</div>
-
-
-
-<!-- 
-<div class="modal fade" id="ExcelPostModel" tabindex="-1" role="dialog" aria-labelledby="ExcelPostModel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-      <form class="modal-content" method="post" id="excel-post-form">
-        {% csrf_token %}
-            <div class="modal-header">
-            <h5 class="modal-title" id="DelModelTitle">Modal Upload</h5>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body row">
-               
-                <div class="col-sm-6">
-                    <div class="form-group4">
-                        <label for="excel_file">Upload</label>
-                        <input  class="form-control" type="file" name="excel_file" />   
-                    </div>
-                </div>
-                <div class="col-sm-4 mt-3">
-                    <div class="form-group my-2">
-                        <button type="submit" class="btn btn-primary">Submit</button>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
-      </form>
-    </div>
-</div> -->
-
 
 
 
@@ -125,7 +48,8 @@
         $('table.display').DataTable({
             "processing" : true,
 			"serverSide" : true,
-            pageLength : 25,
+            "ordering"   : false,
+            "pageLength" : 25,
             // scrollX: true,
             // scrollCollapse: true,
             // autoWidth: false,
@@ -139,22 +63,28 @@
                     url: "{{ settings.BASE_URL }}",
                     method:"PUT",
                     headers: {'X-CSRFToken': csrftoken},
-                    //data:{start:pgno, length:4,search:search,type:'View'}
                     data: JSON.stringify({
                         start: pgno,
                         length: 25,
                         search: search,
-                        type: 'View'
+                        tickall: $('input[name=tickall]').prop('checked')
+                       
                     }),
                 }).then ( function( json, textStatus, jqXHR ) {
-                    console.log(json)
-                    // if(json.success){
-                    //     $('.action').html(json.action.add)
-                    // }
+                    // console.log(json)
                     callback(json);
                 });
             },
-            // pageLength: 10,
+            dom: '<"row mb-2"<"col-sm-6"l><"col-sm-6 d-flex justify-content-end filter-container"f>>' +
+            '<"row"<"col-sm-12"tr>>' +
+            '<"row mt-2"<"col-sm-5"i><"col-sm-7"p>>',
+            initComplete: function(data) {
+                console.log(data.json)
+                if(data.json.success){
+                    $(".filter-container").prepend($(`${data.json.action.status}`));
+                }
+
+            },
             columns: [
                 { data: "id" },
                 { data: "name" },
@@ -166,11 +96,19 @@
          
         });
     }
+
+    $(document).on('change', '#status-update', function() {
+        $('table.display').DataTable().ajax.reload();
+    });
+
+    $('input[name=tickall]').change(function(){
+        // $('table.display').DataTable().clear().destroy();
+        // loadData() 
+        $('table.display').DataTable().ajax.reload();
+    })
    
 
     function deleteModal(id){
-        // $('#deleteModal').modal('show')
-        // $("#deleteModal").find('button[type=submit]').attr('onclick',"deleteItem("+id+")")
         swal({
             title: "Are you sure?",
             text: "You will not be able to recover this file!",
