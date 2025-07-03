@@ -15,7 +15,7 @@ urlpatterns=[
   
  
   ##### Admin ########
-  # path('admin/dashboard',views.dashboard,name='dashboard'),
+  path('admin/dashboard',views.dashboard,name='dashboard'),
   # path('admin/website/trands',views.trand,name="trands"),
   # path('admin/website/trand/<str:trandId>',views.trand,name="trand"),
 

@@ -171,7 +171,8 @@ def menu(request,*args,**kwargs):
                    name=request.POST['menu'], 
                    link=request.POST['link'],
                    type=request.POST['type'],
-                   menuId=parentId
+                   menuId=parentId,
+                   status=1
                   )
                   return HttpResponseRedirect(reverse('movieplanet:menus')) 
             elif int(menuId) and 'Edit' in kwargs.get('permission'):
@@ -349,7 +350,12 @@ def posts(request,*args,**kwargs):
             search = data.get('search', '')
             startIndex = (int(start)-1) * int(length)
             endIndex = startIndex + int(length)
-            
+            item = data.get('item', [])
+            status = data.get('status', '')
+            if status=="1" or status=="0":
+               for i in item:
+                   if i['check']:
+                      Posts.objects.using('movieplanet').filter(id=i['id']).update(status=status)
             if search :
                   data = Posts.objects.using('movieplanet').filter(Q(parent=parentId),name__icontains=search)[startIndex:endIndex].all()
                   totalLen = Posts.objects.using('movieplanet').filter(Q(parent=parentId),name__icontains=search).count()
@@ -373,10 +379,14 @@ def posts(request,*args,**kwargs):
                   if i.type==2:
                      link = f'<a href="{settings.BASE_URL}movieplanet/admin/website/posts/{i.id}" >{i.name}</a>'
                   post = {
-                        "id":f'<div class="d-flex justify-content-between"><span>{i.id}</span> <input type="checkbox" {"checked" if tickall else ""} name="item[{i.id}]" /></div>',
+                        "id":f'<div class="d-flex justify-content-between"><span>{i.id}</span> <input type="checkbox" {"checked" if tickall else ""} name="item[{i.id}]" value="{i.id}" class="item" /></div>',
                         "name":link,
                         "image":f'<img src={i.image}/>',
                         "rate":i.rate,
+                        "status":(
+                        '<span class="badge bg-success">Active</span>' if i.status == "1"
+                        else '<span class="badge bg-danger">Deactive</span>'
+                        ),
                         "action":btn
                   }
                         
@@ -385,8 +395,8 @@ def posts(request,*args,**kwargs):
                 action['status'] = """
                                     <select name="status" class="form-select me-2" id="status-update" style="width: 150px;">
                                           <option value="">Status</option>
-                                          <option value="active">Active</option>
-                                          <option value="trand">Trand</option>
+                                          <option value="1">Active</option>
+                                          <option value="0">Deactive</option>
                                     </select>
                                    """
             return JsonResponse({
@@ -410,6 +420,7 @@ def posts(request,*args,**kwargs):
                   action['add'] = f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/post/create/{parentId}">Add</a>'
                else:
                   action['add'] = f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/post/create">Add</a>'
+                  action['excel'] = f'<a class="btn btn-info" href="{settings.BASE_URL}movieplanet/admin/website/post/excel">Excel</a>'
             if postId=='create' and 'Add' in kwargs.get('permission'):
                if parentId and Posts.objects.using('movieplanet').filter(id=parentId,type=2).exists():
                   return render(request,"movieplanet/admin/postedit.html") 

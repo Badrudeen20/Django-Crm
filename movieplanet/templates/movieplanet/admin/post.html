@@ -9,8 +9,10 @@
 
 <div class="container mt-2">
     
-    <div class="action">
-        {{action.add|safe }}
+    <div class="action d-flex justify-content-between">
+        <div>{{action.add|safe }}</div>
+        <div>{{action.excel|safe }}</div>
+        
     </div>
     <div class="row">
         <div class="col-12">
@@ -21,6 +23,7 @@
                         <th>Name</th>
                         <th>Image</th>
                         <th>Rate</th>
+                        <th>Status</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -58,7 +61,11 @@
                 var search = api.search() 
                 var pageInfo = api.page.info();
                 pgno = pageInfo.page+1;
-                
+                let items = []
+                $('.item').each(function(item){
+                    items.push({id:$(this).val(),check:$(this).prop('checked')})
+                    
+                })
                 $.ajax({
                     url: "{{ settings.BASE_URL }}",
                     method:"PUT",
@@ -67,8 +74,9 @@
                         start: pgno,
                         length: 25,
                         search: search,
-                        tickall: $('input[name=tickall]').prop('checked')
-                       
+                        tickall: $('input[name=tickall]').prop('checked'),
+                        status:$('select[name="status"]').val(),
+                        item:items
                     }),
                 }).then ( function( json, textStatus, jqXHR ) {
                     // console.log(json)
@@ -90,6 +98,7 @@
                 { data: "name" },
                 { data: "image" },
                 { data: "rate" },
+                { data: "status" },
                 { data: "action" },
                 
             ],
