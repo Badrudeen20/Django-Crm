@@ -28,7 +28,7 @@ class Posts(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
 class Trand(models.Model):
-    post = models.ForeignKey(Posts,related_name="posts", on_delete=models.CASCADE)
+    post = models.ForeignKey(Posts,related_name="trands", on_delete=models.CASCADE)
     status = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

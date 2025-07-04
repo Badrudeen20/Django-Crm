@@ -85,7 +85,11 @@
                         {% if forloop.counter|divisibleby:2 %}
                             <div class="col-7 ">
                               <div class="card-block">                          
-                                <a class="card-text" href="{{baseUrl}}movieplanet/detail/{{t.post.name|plusify }}" >{{t.post.name}}</a>
+                                  {% if t.post.type == 2 %}                        
+                                    <a class="card-text" href="{{baseUrl}}movieplanet/{{t.post.name|plusify}}">{{t.post.name}}</a>
+                                  {% else %}
+                                    <a class="card-text" href="{{baseUrl}}movieplanet/detail/{{t.post.name|plusify}}">{{t.post.name}}</a>
+                                  {% endif %}
                               </div>
                             </div>
                             <div class="col-5">
@@ -97,7 +101,12 @@
                             </div>
                             <div class="col-7">
                               <div class="card-block">
-                                <a class="card-text" href="{{baseUrl}}movieplanet/detail/{{t.post.name|plusify }}" >{{t.post.name}}</a>
+                                
+                                  {% if t.post.type == 2 %}                        
+                                    <a class="card-text" href="{{baseUrl}}movieplanet/{{t.post.name|plusify}}">{{t.post.name}}</a>
+                                  {% else %}
+                                    <a class="card-text" href="{{baseUrl}}movieplanet/detail/{{t.post.name|plusify}}">{{t.post.name}}</a>
+                                  {% endif %}
                               </div>
                             </div> 
                         {% endif %}     
