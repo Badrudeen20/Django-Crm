@@ -28,9 +28,11 @@ urlpatterns=[
   path('admin/website/posts/<str:parentId>',views.posts,name="posts"),
   path('admin/website/post/<str:postId>',views.posts,name="post"),
   path('admin/website/post/<str:postId>/<str:parentId>',views.posts,name="post"),
+
   # path('admin/website/post',views.post),
   # path('admin/website/post/<str:postId>',views.post),
   # path('admin/website/excelPost',views.excelPost,name="excelPost"),
+
   path('admin/sidebar',views.sidebarList,name="sidebar"),
   path('admin/administration/permissions/',views.permission,name="permissions"),
   path('admin/administration/permission/<int:role>',views.permission,name="permission"),
@@ -38,7 +40,13 @@ urlpatterns=[
   path('admin/administration/users',views.customers,name="users"),
   path('admin/administration/user/<int:userId>',views.customers,name="user"),
 
+  path('admin/setting/modules',views.modules,name="modules"),
+  path('admin/setting/modules/<str:parentId>',views.modules,name="modules"),
+  path('admin/setting/module/<str:moduleId>',views.modules,name="module"),
+  path('admin/setting/module/<str:moduleId>/<str:parentId>',views.modules,name="module"),
 
+  path('admin/profile',views.profile,name="profile"),
+  
   path('admin/setting/chat',views.chat),
  
 ]

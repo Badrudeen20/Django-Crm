@@ -25,9 +25,16 @@ def permission_required(module):
                     p.strip() for perm in permissions.values_list('permission', flat=True) for p in perm.split(',')
                 ))
                 kwargs['module'] = [permission.modules.module for permission in permissions]
-                parentIds = list(permissions.values_list('module_parent_id', flat=True))
-                kwargs['access'] = checkAccess(parentIds,kwargs['roleIds']) 
+                if module in kwargs['module']:
+                    parentIds = list(permissions.filter(~Q(module_parent_id='')).values_list('module_parent_id', flat=True))
+                    if parentIds:
+                       kwargs['access'] = checkAccess(parentIds,kwargs['roleIds']) 
+                    else:
+                       kwargs['access'] = True  
+                else:
+                    kwargs['access'] = False  
                 kwargs['isAdmin'] = False
+                
             return view(request, *args, **kwargs)     
         return wrapper
     return decorator

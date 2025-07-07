@@ -465,17 +465,14 @@ def posts(request,*args,**kwargs):
                   action['add'] = f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/website/post/create">Add</a>'
                   action['excel'] = f'<a class="btn btn-info" href="{settings.BASE_URL}movieplanet/admin/website/post/excel">Excel</a>'
             if postId=='create' and 'Add' in kwargs.get('permission'):
-               if parentId and Posts.objects.using('movieplanet').filter(id=parentId,type=2).exists():
-                  return render(request,"movieplanet/admin/postedit.html") 
-               elif parentId is None:
-                  return render(request,"movieplanet/admin/postedit.html")  
-               else:
-                  return HttpResponseRedirect(reverse('movieplanet:posts')) 
+               if parentId: 
+                  if Posts.objects.using('movieplanet').filter(id=parentId,type=2).exists():
+                     return render(request,"movieplanet/admin/postedit.html") 
+                  return HttpResponseRedirect(reverse('movieplanet:posts', args=[parentId]))
+               return render(request,"movieplanet/admin/postedit.html")  
+               
             elif postId and 'Edit' in kwargs.get('permission'):
-               if parentId:
-                  post = Posts.objects.using('movieplanet').filter(id=postId,parent=parentId).values().first()
-               else:
-                  post = Posts.objects.using('movieplanet').filter(id=postId).values().first()
+               post = Posts.objects.using('movieplanet').filter(Q(parent=parentId),id=postId).values().first()
                if post:
                   return render(request,"movieplanet/admin/postedit.html",{"post":post})
                return HttpResponseRedirect(reverse('movieplanet:posts')) 
@@ -483,13 +480,14 @@ def posts(request,*args,**kwargs):
     else:
       return render(request,"movieplanet/404.html")  
 
+
 @permission_required('Users')    
 def customers(request,*args,**kwargs):
    if 'Users' in kwargs.get('module') and kwargs.get('access'):
       userId = kwargs.get('userId', None)
-      assignId = list(Roles.objects.using('movieplanet').filter(user_id=kwargs.get('authId')).values_list('given_id', flat=True).distinct())
-      uids = checkRoles(assignId,kwargs.get('roleIds'),[])
+
       if request.method == 'POST' and 'Edit' in kwargs.get('permission'):
+            uids = checkRoles(kwargs.get('authId'),kwargs.get('roleIds'),[])
             if userId not in uids and Roles.objects.using('movieplanet').filter(user_id=userId, role_id__in=kwargs.get('roleIds')).exclude(user_id=kwargs.get('authId')).exists(): 
                   post = request.POST
                   roles = Roles.objects.using('movieplanet').filter(user_id=kwargs.get('authId')).exclude(role__name='User').all()
@@ -523,29 +521,31 @@ def customers(request,*args,**kwargs):
             endIndex = startIndex + int(length)
             listData = []
             totalLen=0
-            cids = checkRoles(assignId,kwargs.get('roleIds'),[kwargs.get('authId')])
-            if search:
-                  data = Customer.objects.using('movieplanet').filter(is_admin="0",name__icontains=search).exclude(id__in=cids).filter(roles__role_id__in=kwargs.get('roleIds')).distinct()[startIndex:endIndex]
-                  totalLen = Customer.objects.using('movieplanet').filter(is_admin="0",name__icontains=search).exclude(id__in=cids).filter(roles__role_id__in=kwargs.get('roleIds')).distinct().count()
-            else:
-                  data = Customer.objects.using('movieplanet').filter(is_admin="0").exclude(id__in=cids).filter(roles__role_id__in=kwargs.get('roleIds')).distinct()[startIndex:endIndex]
-                  totalLen = Customer.objects.using('movieplanet').filter(is_admin="0",name__icontains=search).exclude(id__in=cids).filter(roles__role_id__in=kwargs.get('roleIds')).distinct().count()
+            if len(kwargs.get('roleIds')) > 1:
+                  cids = checkRoles(kwargs.get('authId'),kwargs.get('roleIds'),[kwargs.get('authId')])
+                  
+                  if search:
+                        data = Customer.objects.using('movieplanet').filter(is_admin="0",name__icontains=search).exclude(id__in=cids).filter(roles__role_id__in=kwargs.get('roleIds')).distinct()[startIndex:endIndex]
+                        totalLen = Customer.objects.using('movieplanet').filter(is_admin="0",name__icontains=search).exclude(id__in=cids).filter(roles__role_id__in=kwargs.get('roleIds')).distinct().count()
+                  else:
+                        data = Customer.objects.using('movieplanet').filter(is_admin="0").exclude(id__in=cids).filter(roles__role_id__in=kwargs.get('roleIds')).distinct()[startIndex:endIndex]
+                        totalLen = Customer.objects.using('movieplanet').filter(is_admin="0",name__icontains=search).exclude(id__in=cids).filter(roles__role_id__in=kwargs.get('roleIds')).distinct().count()
+
+                  for i in data:
+                        # assignId = list(i.roles.values_list('given_id', flat=True).distinct())
+                        # roleIds = list(i.roles.values_list('role_id', flat=True))
+                        # if any(role in roleIds for role in kwargs.get('roleIds')):
+                        btn =''
+                        if 'Edit' in kwargs.get('permission'):
+                              btn += f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/administration/user/{i.id}" >Edit</a>'
+                        post = {
+                              "id":i.id,
+                              "name":i.name,
+                              "email":i.email,
+                              "action":btn
+                        }
+                        listData.append(post)
             
-            for i in data:
-                  # assignId = list(i.roles.values_list('given_id', flat=True).distinct())
-                  # roleIds = list(i.roles.values_list('role_id', flat=True))
-                  # if any(role in roleIds for role in kwargs.get('roleIds')):
-                  btn =''
-                  if 'Edit' in kwargs.get('permission'):
-                        btn += f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/administration/user/{i.id}" >Edit</a>'
-                  post = {
-                        "id":i.id,
-                        "name":i.name,
-                        "email":i.email,
-                        "action":btn
-                  }
-                  listData.append(post)
-      
             return JsonResponse({
                         "success": True,
                         "iTotalRecords":totalLen,
@@ -555,15 +555,14 @@ def customers(request,*args,**kwargs):
       
       else:
             if userId and 'Edit' in kwargs.get('permission'):
-
+               uids = checkRoles(kwargs.get('authId'),kwargs.get('roleIds'),[])
                if userId not in uids and Roles.objects.using('movieplanet').filter(user_id=userId, role_id__in=kwargs.get('roleIds')).exclude(user_id=kwargs.get('authId')).exists():
                   # uids.remove(kwargs.get('authId'))
                   # merged = list(dict.fromkeys(uroles + kwargs.get('roleIds')))
 
                   roles = Roles.objects.using('movieplanet').filter(user_id=kwargs.get('authId')).exclude(role__name='User').all()
                   allowRoles = []
-                  for r in roles:
-                      
+                  for r in roles:                     
                       if Roles.objects.using('movieplanet').filter(user_id=userId, role_id = r.role_id).exists():
                          if kwargs.get('authId') in uids:
                             uids.remove(kwargs.get('authId'))
@@ -581,23 +580,31 @@ def customers(request,*args,**kwargs):
    else:
       return render(request,"movieplanet/404.html")  
 
-def checkRoles(ids, rids, collected=None):
+
+def checkRoles(aid, rids, collected=None):
     if collected is None:
-        collected = []
-    data = Customer.objects.using('movieplanet').all()
+       collected = []
+    if Customer.objects.using('movieplanet').filter(id=aid,is_admin=1).exists():
+       return collected
+    data = Customer.objects.using('movieplanet').exclude(id=aid).all()
+    gids = list(Roles.objects.using('movieplanet').filter(user_id=aid).filter(
+           ~Q(given_id=None)
+           ).values('given_id', 'role_id').distinct())
+    ids = list(set(map(lambda x: x['given_id'], gids)))
+
+
     for i in data:
+      cgids = list(i.roles.filter(
+      ~Q(given_id=None)
+      ).values('given_id', 'role_id').distinct())
+     
       if i.is_admin == 1:
          collected.append(i.id) 
+      elif all(item in cgids for item in gids):  
+           collected.append(i.id) 
       elif i.id in ids and i.id not in collected:
-            collected.append(i.id)
-            assign_ids = list(
-            Roles.objects.using('movieplanet')
-            .filter(user_id=i.id)
-            .values_list('given_id', flat=True)
-            .distinct()
-            )
-            checkRoles(assign_ids, rids, collected)
-
+           collected.append(i.id)
+           checkRoles(i.id, rids, collected)
     return collected   
 
 @permission_required('Chat')   
@@ -606,7 +613,119 @@ def chat(request,*args,**kwargs):
       return render(request,"movieplanet/admin/chat.html")
     else:
       return render(request,"movieplanet/404.html")  
-    
+
+@permission_required('Module') 
+def modules(request,*args,**kwargs):
+    if 'Module' in kwargs.get('module') and kwargs.get('access'):
+      parentId = kwargs.get('parentId', '')
+      moduleId = kwargs.get('moduleId', '')
+      action = {}
+      if request.method == 'POST' and 'View' in kwargs.get('permission'):
+            if moduleId =='create' and 'Add' in kwargs.get('permission'):
+               Module.objects.using('movieplanet').create(
+                  module=request.POST['module'], 
+                  url=request.POST['url'],
+                  moduleType=request.POST['type'],
+                  parent_id=parentId
+               )
+            elif int(moduleId) and 'Edit' in kwargs.get('permission'):
+                  if parentId:
+                     update = Module.objects.using('movieplanet').filter(parent_id=parentId,id=moduleId).first()
+                  else:
+                     update = Module.objects.using('movieplanet').filter(id=moduleId).first()
+                  if update:
+                        update.module = request.POST['module']
+                        update.url = request.POST['url']
+                        update.save()
+                        if parentId:
+                           return HttpResponseRedirect(reverse('movieplanet:module', args=[moduleId, parentId]))
+                        return HttpResponseRedirect(reverse('movieplanet:module', args=[moduleId]))
+            return HttpResponseRedirect(reverse('movieplanet:modules'))      
+
+
+      elif request.method == 'PUT' and 'View' in kwargs.get('permission'):
+            data = json.loads(request.body)
+            parentId = kwargs.get('parentId', '')
+            start = int(data.get('start', 1))
+            length = int(data.get('length', 10))
+            search = data.get('search', '')
+            startIndex = (int(start)-1) * int(length)
+            endIndex = startIndex + int(length)
+            listData = []
+            if search :
+                  data = Module.objects.using('movieplanet').filter(Q(parent_id=parentId),name__icontains=search)[startIndex:endIndex]
+                  totalLen = Module.objects.using('movieplanet').filter(Q(parent_id=parentId),name__icontains=search).count()
+            else:
+                  data = Module.objects.using('movieplanet').filter(Q(parent_id=parentId))[startIndex:endIndex]
+                  totalLen = Module.objects.using('movieplanet').filter(Q(parent_id=parentId)).count()
+
+            for i in data:
+                  action_btn = ''
+                  if 'Edit' in kwargs.get('permission'):
+                      if parentId:
+                        action_btn += f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/setting/module/{i.id}/{parentId}">Edit</a>' 
+                      else:
+                        action_btn += f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/setting/module/{i.id}">Edit</a>'   
+                  if 'Delete' in kwargs.get('permission'):
+                      action_btn += f'<button class="btn btn-danger" onclick="deleteModal({i.id})">Delete</button>' 
+                  if i.moduleType=="2":
+                     link = (f'<a href="{settings.BASE_URL}movieplanet/admin/setting/modules/{i.id}">{i.module}</a>')
+                  else:
+                      link = i.module
+                  permission = {
+                  "id":i.id,
+                  "module":link,
+                  "action":action_btn
+                  }
+                  listData.append(permission)
+ 
+            return JsonResponse({
+            "success": True,
+            "iTotalRecords":totalLen,
+            "iTotalDisplayRecords":totalLen,
+            "aaData":listData,
+            "action":action
+            }, status=200)
+      elif request.method == 'PATCH' and 'Edit' in kwargs.get('permission'):
+            data = json.loads(request.body)
+            Module.objects.using('movieplanet').filter(id=data.get('id')).delete()
+            Module.objects.using('movieplanet').filter(parent_id=data.get('id')).delete()
+           
+            return JsonResponse({
+                  "status": True,
+                  "msg":"Item delete successfully!"
+            }, status=200)
+           
+      else:
+
+            if 'Add' in kwargs.get('permission'):
+               if parentId:
+                  action['add'] = f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/setting/module/create/{parentId}">Add</a>'
+               else:
+                  action['add'] = f'<a class="btn btn-primary" href="{settings.BASE_URL}movieplanet/admin/setting/module/create">Add</a>'
+           
+            if moduleId=='create' and 'Add' in kwargs.get('permission'):
+               if parentId:
+                  if Module.objects.using('movieplanet').filter(id=parentId,moduleType="2").exists():
+                     return render(request,"movieplanet/admin/moduleedit.html") 
+                  return HttpResponseRedirect(reverse('movieplanet:modules', args=[parentId]))
+               return render(request,"movieplanet/admin/moduleedit.html")  
+               
+            
+            elif moduleId and 'Edit' in kwargs.get('permission'):
+               module = Module.objects.using('movieplanet').filter(Q(parent_id=parentId),id=moduleId).values().first()
+
+               if module:
+                  return render(request,"movieplanet/admin/moduleedit.html",{"module":module})
+               return HttpResponseRedirect(reverse('movieplanet:modules')) 
+
+            return render(request,"movieplanet/admin/module.html",{"action":action})
+
+
+    else:
+      return render(request,"movieplanet/404.html")   
+
+
 @xhr_request_only()
 def sidebarList(request,*args,**kwargs):
    modules = kwargs.get('module')
@@ -615,6 +734,24 @@ def sidebarList(request,*args,**kwargs):
       "success": True,
       "data":sidebarList
    }, status=200)   
+
+
+@permission_required('Profile')
+def profile(request,*args,**kwargs):
+    if 'Profile' in kwargs.get('module') and kwargs.get('access'):
+      if request.method == 'POST' and 'View' in kwargs.get('permission'):
+         pass 
+      elif request.method == 'PUT' and 'View' in kwargs.get('permission'):
+           pass
+      elif request.method == 'PATCH' and 'Edit' in kwargs.get('permission'):
+           pass
+      else:
+            profile = Customer.objects.using('movieplanet').filter(id=kwargs.get('authId')).first()
+          
+            return render(request,"movieplanet/admin/profile.html",{"profile":profile})
+    else:
+      return render(request,"movieplanet/404.html")   
+
 
 
 ############# Auth ############
@@ -638,7 +775,7 @@ def login(request):
             return HttpResponseRedirect(reverse('movieplanet:movieplanet-login'))
     else:
       return render(request,"movieplanet/login.html")
-   
+ 
 def signup(request):
     if request.method == 'POST':
         email = request.POST['email']
@@ -675,8 +812,6 @@ def logout(request):
     request.session.flush()
     return HttpResponseRedirect(reverse('movieplanet:movieplanet-login'))
     # return HttpResponse("Logged out successfully!")
-
-
 
 ########## Frontend ################
 

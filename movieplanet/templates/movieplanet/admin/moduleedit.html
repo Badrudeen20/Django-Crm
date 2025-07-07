@@ -11,23 +11,23 @@
       {% csrf_token %}
             <div class="col-sm-6">
                 <div class="form-group">
-                    <label class="form-label" for="menu">Name</label>
-                    <input class="form-control" name="menu" id="menu" value="{{menu.name}}" placeholder="Menu name" />
+                    <label class="form-label" for="module">Name</label>
+                    <input class="form-control" name="module" id="module" value="{{module.module}}" placeholder="Menu name" />
                 </div>
               </div>
               <div class="col-sm-6">
                 <div class="form-group">
                     <label class="form-label">Type</label>
                     <select class="form-control" name="type">
-                        <option value="1" {% if menu.type == 1 %}selected{% endif %}>File</option>
-                        <option value="2" {% if menu.type == 2 %}selected{% endif %}>Folder</option>
+                        <option value="1" {% if module.moduleType == "1" %}selected{% endif %}>File</option>
+                        <option value="2" {% if module.moduleType == "2" %}selected{% endif %}>Folder</option>
                     </select>
                 </div>
               </div>
               <div class="col-sm-6">
                 <div class="form-group">
-                    <label class="form-label" for="link">Link</label>
-                    <input class="form-control" name="link" id="link" value="{{menu.link}}" placeholder="link" />
+                    <label class="form-label" for="url">Url</label>
+                    <input class="form-control" name="url" id="url" value="{{module.url}}" placeholder="link" />
                 </div>
               </div>
               
