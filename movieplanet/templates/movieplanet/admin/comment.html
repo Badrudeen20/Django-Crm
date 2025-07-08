@@ -1,0 +1,129 @@
+
+{% extends "movieplanet/layout/admin.html" %}
+
+
+{% block content %}
+<div class="container d-flex justify-content-center">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.css" />
+<link rel="stylesheet" type="text/css" href="https://common.olemiss.edu/_js/sweet-alert/sweet-alert.css">
+
+<div class="container mt-2">
+
+    <div class="row">
+        <div class="col-12">
+            <table id="customer_table"  class="display " style="width:100%;">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Name</th>
+                        <th>Comment</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+            </table>
+        </div>
+
+      </div>
+  
+</div>
+
+
+
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script> -->
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.js"></script>
+<script src="https://common.olemiss.edu/_js/sweet-alert/sweet-alert.min.js"></script>
+
+<script>
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    $(document).ready( function () {
+        loadData()
+    })
+    function loadData(){
+        var pgno = 0;
+        $('table.display').DataTable({
+            "processing" : true,
+		"serverSide" : true,
+            "ordering"   : false,
+            "pageLength" : 25,
+
+            ajax: function (data, callback, settings) {
+                var api = this.api();
+                var search = api.search() 
+                var pageInfo = api.page.info();
+                pgno = pageInfo.page+1;
+                
+               
+                $.ajax({
+                    url: "{{ settings.BASE_URL }}",
+                    method:"PUT",
+                    headers: {'X-CSRFToken': csrftoken},
+                    data: JSON.stringify({
+                        start: pgno,
+                        length: 25,
+                        search: search,
+                    }),
+                }).then ( function( json, textStatus, jqXHR ) {
+                    if(json.success){
+                       callback(json);
+                    }
+                    
+                });
+            },
+
+            columns: [
+                { data: "id" },
+                { data: "name" },
+                { data: "comment" },
+                { data: "status" },
+                { data: "action" },
+                
+            ],
+         
+        });
+    }
+
+
+    function deleteModal(id){
+        swal({
+            title: "Are you sure?",
+            text: "You will not be able to recover this file!",
+            type: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#DD6B55",
+            confirmButtonText: "Yes, delete it!",
+            cancelButtonText: "No, cancel plx!",
+            closeOnConfirm: false,
+            closeOnCancel: false
+        },function(isConfirm){
+            if (isConfirm) {
+                $.ajax({
+                    url: '{{ settings.BASE_URL }}', // Replace with your server endpoint
+                    method: 'PATCH',
+                    data: JSON.stringify({id:id}),
+                    headers: {'X-CSRFToken': csrftoken},
+                    contentType: 'application/json',
+                    success: function(response) {
+                        console.log(response)
+                        if(response.status){
+                            $('table.display').DataTable().clear().destroy();
+                            loadData()
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error('Error submitting form:', xhr.responseText);
+                    }
+                }); 
+          
+
+            } 
+            swal.close();
+        });
+    }
+
+
+
+</script>
+
+{% endblock %}

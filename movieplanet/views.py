@@ -752,7 +752,57 @@ def profile(request,*args,**kwargs):
     else:
       return render(request,"movieplanet/404.html")   
 
+@permission_required('Comments')
+def comments(request,*args,**kwargs):
+    if 'Comments' in kwargs.get('module') and kwargs.get('access'):
+      if request.method == 'POST' and 'View' in kwargs.get('permission'):
+         pass 
+      elif request.method == 'PUT' and 'View' in kwargs.get('permission'):
+            data = json.loads(request.body)
+            start = int(data.get('start', 1))
+            length = int(data.get('length', 10))
+            search = data.get('search', '')
+            startIndex = (int(start)-1) * int(length)
+            endIndex = startIndex + int(length)
+            listData = []
+            if search :
+                  data = Comments.objects.using('movieplanet').filter(msg__icontains=search)[startIndex:endIndex]
+                  totalLen = Comments.objects.using('movieplanet').filter(msg__icontains=search).count()
+            else:
+                  data = Comments.objects.using('movieplanet')[startIndex:endIndex]
+                  totalLen = Comments.objects.using('movieplanet').count()
 
+            for i in data:
+                  action_btn = ''
+                  if 'Delete' in kwargs.get('permission'):
+                      action_btn += f'<button class="btn btn-danger" onclick="deleteModal({i.id})">Delete</button>' 
+                  
+                  status = '<span class="badge bg-danger">Pending</span>'
+                  if i.status == "1":
+                     status = '<span class="badge bg-success">Approved</span>'
+                  
+                  permission = {
+                  "id":i.id,
+                  "name":i.user.name,
+                  "comment":i.msg,
+                  "status":status,
+                  "action":action_btn
+                  }
+                  listData.append(permission)
+ 
+            return JsonResponse({
+            "success": True,
+            "iTotalRecords":totalLen,
+            "iTotalDisplayRecords":totalLen,
+            "aaData":listData
+            }, status=200)
+      elif request.method == 'PATCH' and 'Edit' in kwargs.get('permission'):
+           pass
+      else:
+
+            return render(request,"movieplanet/admin/comment.html")
+    else:
+      return render(request,"movieplanet/404.html")   
 
 ############# Auth ############
 def login(request):
@@ -932,7 +982,7 @@ def detail(request,Link=None,parentId=None):
                   msg=request.POST['msg'],
                   parentId=parentId,
                   post_id=data['id'],
-                  status=1
+                  status=0
             )
             
             return JsonResponse({
@@ -946,11 +996,12 @@ def detail(request,Link=None,parentId=None):
       comments = Comments.objects.using('movieplanet').filter(Q(parentId=parentId),post=data['id']).order_by('-id').all()[0:8]
       isComment = False
       html = ''
+      
       if parentId:
          html +='<ul class="list-group my-2 ml-4 comment">'  
       for c in comments:
             isComment = True
-          
+            
             if parentId:
                   html += f"""
                   <li class="list-group-item mb-2">
@@ -958,13 +1009,7 @@ def detail(request,Link=None,parentId=None):
                           <strong>{c.user.name}</strong>
                           <p>{c.msg}</p>
                   """
-                  # if request.session.get('customer'):
-                  #    html +=f"""<button class="btn btn-sm btn-danger" onclick="onReplay({c.id})">Replay</button>"""
-                 
-                  # html +=f"""
-                  #         <button class="btn btn-sm btn-dark" onclick="loadData({c.id})">More</button>
-                  #       </div>
-                  #       """
+                
                   if request.session.get('customer'):
                         html +=f"""      
                               <div class="mt-1 replay" style="display:none;" id="replay-{c.id}">
@@ -977,32 +1022,52 @@ def detail(request,Link=None,parentId=None):
                   </li>
                   """
             else:
-                  html += f"""
-                  <li class="list-group-item mb-2">
-                        <div class="content">
-                          <strong>{c.user.name}</strong>
-                          <p>{c.msg}</p>
-                  """
                   if request.session.get('customer'):
-                        html +=f"""        
-                              <button class="btn btn-sm btn-danger" onclick="onReplay({c.id})">Replay</button>
+                        if c.status != "1" and request.session.get('customer')['id'] == c.user_id:
+                              html += f"""
+                              <li class="list-group-item mb-2">
+                                    <div class="content">
+                                          <strong>{c.user.name}</strong>
+                                          <p>Your comment send for approval.</p> 
+                                    </div>
+
+                              </li>
                               """
-                    
-                  html +=f"""       
-                          <button class="btn btn-sm btn-dark" onclick="loadData({c.id})">More</button>
-                        </div>
-                        """
-                  if request.session.get('customer'):
-                        html +=f"""  
-                              <div class="mt-1 replay" style="display:none;" id="replay-{c.id}">
-                                    <textarea class="form-control" name="replay"></textarea>
-                                    <button class="btn btn-sm btn-success mt-1" onclick="sendComment({c.id})">Replay</button>
-                              </div>
-                        """      
-                  html +=f"""        
-                       <div id="li-{c.id}"></div>
-                  </li>
-                  """
+
+                        else:
+                              if c.status == "1":
+                                    html += f"""
+                                    <li class="list-group-item mb-2">
+                                          <div class="content">
+                                                <strong>{c.user.name}</strong>
+                                                <p>{c.msg}</p>
+                                                <button class="btn btn-sm btn-danger" onclick="onReplay({c.id})">Replay</button>
+                                                <button class="btn btn-sm btn-dark" onclick="loadData({c.id})">More</button>
+                                          </div>
+                                          <div id="li-{c.id}"></div>
+                                    
+                                          <div class="mt-1 replay" style="display:none;" id="replay-{c.id}">
+                                                <textarea class="form-control" name="replay"></textarea>
+                                                <button class="btn btn-sm btn-success mt-1" onclick="sendComment({c.id})">Replay</button>
+                                          </div>
+                                    </li>
+                                    """
+
+
+                  else:
+                        
+                        if c.status == "1":
+                              html += f"""
+                              <li class="list-group-item mb-2">
+                                    <div class="content">
+                                    <strong>{c.user.name}</strong>
+                                    <p>{c.msg}</p>
+                                    <button class="btn btn-sm btn-dark" onclick="loadData({c.id})">More</button>
+                                    </div>
+                                    <div id="li-{c.id}"></div>
+                              </li>
+                              """
+                 
       if parentId:
          html +='</ul>'    
       return JsonResponse({

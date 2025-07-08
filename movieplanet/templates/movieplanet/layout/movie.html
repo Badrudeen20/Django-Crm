@@ -84,7 +84,7 @@ button {
   justify-content: space-between;
   column-gap: 2rem;
   height: 90px;
-  padding: 1.2rem 3rem;
+  padding: 1.2rem 0rem;
 }
 
 .menu {
@@ -120,6 +120,13 @@ button {
 .dropdown-link:hover {
   color: var(--primary-color);
 }
+.nav-start {
+ margin-left: 10px;
+}
+.nav-end {
+ margin-right: 10px;
+}
+
 
 .nav-start,
 .nav-end,
@@ -225,9 +232,18 @@ button {
 
 #hamburger {
   display: none;
-  padding: 0.1rem;
-  margin-left: 1rem;
-  font-size: 1.9rem;
+  /* padding: 0rem 0.1rem;  */
+  margin-left: 0.4rem;
+  font-size: 2.5rem;
+  margin-top:0.2rem;
+}
+.profile{
+  margin-top: 0rem;
+  font-size: 1.1rem;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid #000;
+  border-radius: 100%;
+  cursor: pointer;
 }
 
 @media (max-width: 1100px) {
@@ -331,6 +347,11 @@ button {
     </div>
 
     <div class="nav-end">
+      {% with request.session.customer as customer %}
+        {% if customer %}
+           <a class="profile" href="{{ settings.BASE_URL }}/movieplanet/admin/dashboard" data-toggle="tooltip" data-placement="top" title="Profile"><i class='bx bx-user'></i></a> 
+        {% endif %}
+      {% endwith %}
       <button id="hamburger" aria-label="hamburger" aria-haspopup="true" aria-expanded="false">
         <i class="bx bx-menu" aria-hidden="true"></i>
       </button>
@@ -363,7 +384,11 @@ button {
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" crossorigin="anonymous"></script>
 <script>
+  $(function () {
+    $('[data-toggle="tooltip"]').tooltip();
+  });
   $(document).ready(function(){
+    
   $.ajax({
     type: 'GET',
     url: "{{ settings.BASE_URL }}/movieplanet/menubar",

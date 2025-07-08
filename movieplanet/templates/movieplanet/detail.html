@@ -129,41 +129,7 @@
 <script>
   $(document).ready(function(){
       loadData()
-      /*
-      let trands = ''
-      let url = baseUrl+"/detail/"
-      {% for t in Trands %}
-      
-            trands+=`<div class="col-md-6 col-sm-12 col-lg-12">
-                <div class="card float-left my-2">
-                  <div class="row ">`
-
-              {% if forloop.counter|divisibleby:2 %}
-              trands+=`<div class="col-7 ">
-                        <div class="card-block">                          
-                          <a class="card-text" href="${url+"{{t.post.name}}".split(' ').join('+')}">{{t.post.name}}</a>
-                        </div>
-                      </div>
-                      <div class="col-5">
-                        <img class="d-block w-100" src="{{t.post.image}}" alt="">
-                      </div>`
-              {% else %}
-              trands+=`<div class="col-5">
-                        <img class="d-block w-100" src="{{t.post.image}}" alt="">
-                      </div>
-                      <div class="col-7">
-                        <div class="card-block">
-                          <a class="card-text" href="${url+"{{t.post.name}}".split(' ').join('+')}">{{t.post.name}}</a>
-                        </div>
-                      </div>`
-              {% endif %}     
-            trands+=`</div>
-                  </div>
-                </div>`
-      {% endfor %}
-      
-      $('#trands').html(trands)
-      */ 
+     
   })
   function loadData(parentId=''){
       let url = baseUrl+"/detail/{{ link }}"
@@ -199,6 +165,7 @@
               headers: {'X-CSRFToken': csrftoken},
               data:{msg:msg}
           }).then ( function( json, textStatus, jqXHR ) { 
+             $('textarea[name=replay]').val('')
              loadData(commentId) 
           });
         {% endif %}

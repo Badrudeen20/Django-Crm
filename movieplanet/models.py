@@ -120,7 +120,7 @@ class Permission(models.Model):
         return self.permission
     
 class Comments(models.Model):
-    user =  models.ForeignKey(Customer, on_delete=models.CASCADE,related_name='customer')
+    user =  models.OneToOneField(Customer, on_delete=models.CASCADE,related_name='customer')
     msg = models.TextField(blank=True, null=True)
     post = models.ForeignKey(Posts, on_delete=models.CASCADE,related_name='post')
     parentId = models.CharField(max_length=100,null=True)

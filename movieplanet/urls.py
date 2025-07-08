@@ -29,6 +29,9 @@ urlpatterns=[
   path('admin/website/post/<str:postId>',views.posts,name="post"),
   path('admin/website/post/<str:postId>/<str:parentId>',views.posts,name="post"),
 
+  path('admin/website/comments',views.comments,name="comments"),
+
+
   # path('admin/website/post',views.post),
   # path('admin/website/post/<str:postId>',views.post),
   # path('admin/website/excelPost',views.excelPost,name="excelPost"),
@@ -46,7 +49,7 @@ urlpatterns=[
   path('admin/setting/module/<str:moduleId>/<str:parentId>',views.modules,name="module"),
 
   path('admin/profile',views.profile,name="profile"),
-  
+ 
   path('admin/setting/chat',views.chat),
  
 ]
